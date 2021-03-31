@@ -1,0 +1,176 @@
+﻿@model ConfigurationModel
+
+@{
+    Layout = "_ConfigurePlugin";
+
+    Html.AppendCssFileParts("~/lib/tagEditor/jquery.tag-editor.css");
+    Html.AppendScriptParts("~/lib/tagEditor/jquery.tag-editor.min.js");
+    Html.AppendScriptParts("~/lib/tagEditor/jquery.caret.min.js");
+}
+
+@await Component.InvokeAsync("StoreScopeConfiguration")
+
+<form asp-controller="OpenPayPayment" asp-action="Configure" method="post">
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                @Html.Raw(T("Plugins.Payments.OpenPay.Instructions"))
+                <div class="form-group">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="UseSandbox_OverrideForStore" asp-input="UseSandbox" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="UseSandbox" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="UseSandbox" />
+                        <span asp-validation-for="UseSandbox"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="ApiToken_OverrideForStore" asp-input="ApiToken" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="ApiToken" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="ApiToken" asp-required="true" />
+                        <span asp-validation-for="ApiToken"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="RegionTwoLetterIsoCode_OverrideForStore" asp-input="RegionTwoLetterIsoCode" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="RegionTwoLetterIsoCode" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-select asp-for="RegionTwoLetterIsoCode" asp-items="@Model.AvailableRegions" />
+                        <span asp-validation-for="RegionTwoLetterIsoCode"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="AdditionalFee_OverrideForStore" asp-input="AdditionalFee" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="AdditionalFee" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="AdditionalFee" />
+                        <span asp-validation-for="AdditionalFee"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="AdditionalFeePercentage_OverrideForStore" asp-input="AdditionalFeePercentage" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="AdditionalFeePercentage" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="AdditionalFeePercentage" />
+                        <span asp-validation-for="AdditionalFeePercentage"></span>
+                    </div>
+                </div>
+                <div class="panel-group">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            @T("Plugins.Payments.OpenPay.PriceBreakdown")
+                        </div>
+                        <div class="panel-body">
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="DisplayPriceBreakdownOnProductPage" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="DisplayPriceBreakdownOnProductPage" />
+                                    <span asp-validation-for="DisplayPriceBreakdownOnProductPage"></span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="DisplayPriceBreakdownInProductBox" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="DisplayPriceBreakdownInProductBox" />
+                                    <span asp-validation-for="DisplayPriceBreakdownInProductBox"></span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="DisplayPriceBreakdownInShoppingCart" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="DisplayPriceBreakdownInShoppingCart" />
+                                    <span asp-validation-for="DisplayPriceBreakdownInShoppingCart"></span>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="PlanTiers" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="PlanTiers" />
+                                    <script>
+                                        $(document).ready(function () {
+                                            var availableTags = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+                                            $("#@Html.IdFor(model => model.PlanTiers)").tagEditor({
+                                                autocomplete: {
+                                                    delay: 0,
+                                                    position: { collision: 'flip' },
+                                                },
+                                                delimiter: ',',
+                                                placeholder: 'e.g. 2,4...',
+                                                sortable: true,
+                                                beforeTagSave: function (field, editor, tags, tag, val) {
+                                                    if (availableTags.indexOf(val) === -1) return false;
+                                                }
+                                            });
+                                        });
+                                    </script>
+                                    <span asp-validation-for="PlanTiers"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-group">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            @T("Plugins.Payments.OpenPay.OrderLimits")
+                        </div>
+                        <div class="panel-body">
+                            <p>
+                                @Html.Raw(string.Format(T("Plugins.Payments.OpenPay.OrderLimitsDescription").Text, Url.Action("Index", "ScheduleTask")))
+                                <br />
+                            </p>
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    <nop-override-store-checkbox asp-for="MinOrderTotal_OverrideForStore" asp-input="MinOrderTotal" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                    <nop-label asp-for="MinOrderTotal" />
+                                </div>
+                                <div class="col-md-9">
+                                    <input asp-for="MinOrderTotal" asp-disabled="true" class="form-control" />
+                                    <span asp-validation-for="MinOrderTotal"></span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    <nop-override-store-checkbox asp-for="MaxOrderTotal_OverrideForStore" asp-input="MaxOrderTotal" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                    <nop-label asp-for="MaxOrderTotal" />
+                                </div>
+                                <div class="col-md-9">
+                                    <input asp-for="MaxOrderTotal" asp-disabled="true" class="form-control" />
+                                    <span asp-validation-for="MaxOrderTotal"></span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-9 col-md-offset-3">
+                                    <input type="submit" name="get-order-limits" class="btn bg-primary" value="@T("Plugins.Payments.OpenPay.DownloadOrderLimitsButton")" @(string.IsNullOrEmpty(Model.ApiToken) ? "disabled=\"disabled\"" : string.Empty) />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-9 col-md-offset-3">
+                        <input type="submit" name="save" class="btn bg-primary" value="@T("Admin.Common.Save")" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

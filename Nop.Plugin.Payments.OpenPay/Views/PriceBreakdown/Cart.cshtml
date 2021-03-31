@@ -1,0 +1,9 @@
+﻿@model PriceBreakdownModel
+
+@await Html.PartialAsync("~/Plugins/Payments.OpenPay/Views/PriceBreakdown/_Config.cshtml", Model)
+
+<script asp-location="Footer">
+    $(document).ready(function () {
+        $('div.total-info').after('<opy-cart amount="@Model.Amount" logo="grey-on-amberbg"></opy-cart>');
+    });
+</script>

@@ -1,0 +1,13 @@
+﻿@model PriceBreakdownModel
+
+<script src="@Defaults.OpenPay.Widget.ScriptUrl"></script>
+<script>
+    OpenpayWidgets.Config({
+        region: '@Model.WidgetCode',
+        currency: (0).toLocaleString('@Model.RegionCode', { style: 'currency', currency: '@Model.CurrencyCode', minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('0.00', '').replace('0,00', ''),
+        planTiers: @Html.Raw(Json.Serialize(Model.PlanTiers)),
+        minEligibleAmount: @Model.MinEligibleAmount,
+        maxEligibleAmount: @Model.MaxEligibleAmount,
+        type: '@Model.Type'
+    });
+</script>

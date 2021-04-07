@@ -107,7 +107,7 @@ namespace Nop.Plugin.Payments.OpenPay
                 _httpContextAccessor.HttpContext.Response.Redirect(result.HandoverUrl);
             else
             {
-                _logger.Error(string.Join("\n", result.Errors));
+                _logger.Error($"{Defaults.SystemName}: {string.Join("\n", result.Errors)}");
 
                 var urlHelper = _urlHelperFactory.GetUrlHelper(_actionContextAccessor.ActionContext);
                 var failUrl = urlHelper.RouteUrl(Defaults.OrderDetailsRouteName, new { orderId = order.Id }, _webHelper.CurrentRequestProtocol);
@@ -147,21 +147,7 @@ namespace Nop.Plugin.Payments.OpenPay
         /// <returns>Capture payment result</returns>
         public CapturePaymentResult Capture(CapturePaymentRequest capturePaymentRequest)
         {
-            if (capturePaymentRequest is null)
-                throw new ArgumentNullException(nameof(capturePaymentRequest));
-
-            var order = capturePaymentRequest.Order;
-            var result = _openPayService.CaptureOrder(order);
-            if (!string.IsNullOrEmpty(result.OrderId))
-            {
-                return new CapturePaymentResult 
-                { 
-                    CaptureTransactionId = result.OrderId,
-                    NewPaymentStatus = PaymentStatus.Paid
-                };
-            }
-
-            return new CapturePaymentResult { Errors = result.Errors };
+            return new CapturePaymentResult { Errors = new[] { "Capture method not supported" } };
         }
 
         /// <summary>
@@ -432,7 +418,7 @@ namespace Nop.Plugin.Payments.OpenPay
         /// <summary>
         /// Gets a value indicating whether capture is supported
         /// </summary>
-        public bool SupportCapture => true;
+        public bool SupportCapture => false;
 
         /// <summary>
         /// Gets a value indicating whether partial refund is supported
@@ -472,7 +458,7 @@ namespace Nop.Plugin.Payments.OpenPay
         /// <summary>
         /// Gets a value indicating whether to hide this plugin on the widget list page in the admin area
         /// </summary>
-        public bool HideInWidgetList => false;
+        public bool HideInWidgetList => true;
 
         #endregion
     }

@@ -17,7 +17,7 @@ namespace Nop.Plugin.Payments.OpenPay.Infrastructure
                 new { controller = "OpenPayPayment", action = "Configure", area = AreaNames.Admin });
 
             endpointRouteBuilder.MapControllerRoute(Defaults.SuccessfulPaymentWebhookRouteName, "Plugins/OpenPay/Successful",
-                new { controller = "OpenPayWebhook", action = "SuccessfulPaymentWebhook" });
+                new { controller = "OpenPayCallback", action = "SuccessfulPayment" });
         }
 
         /// <summary>

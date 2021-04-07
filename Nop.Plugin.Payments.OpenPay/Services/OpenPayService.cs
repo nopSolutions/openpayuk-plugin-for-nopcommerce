@@ -11,7 +11,9 @@ using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Infrastructure;
 using Nop.Plugin.Payments.OpenPay.Models;
+using Nop.Services.Catalog;
 using Nop.Services.Common;
+using Nop.Services.Configuration;
 using Nop.Services.Customers;
 using Nop.Services.Directory;
 using Nop.Services.Localization;
@@ -34,6 +36,8 @@ namespace Nop.Plugin.Payments.OpenPay.Services
         private readonly IGenericAttributeService _genericAttributeService;
         private readonly IOrderTotalCalculationService _orderTotalCalculationService;
         private readonly IStateProvinceService _stateProvinceService;
+        private readonly ISettingService _settingService;
+        private readonly IShoppingCartService _shoppingCartService;
         private readonly ILocalizationService _localizationService;
         private readonly IUrlHelperFactory _urlHelperFactory;
         private readonly IWebHelper _webHelper;
@@ -54,6 +58,8 @@ namespace Nop.Plugin.Payments.OpenPay.Services
             IGenericAttributeService genericAttributeService,
             IOrderTotalCalculationService orderTotalCalculationService,
             IStateProvinceService stateProvinceService,
+            ISettingService settingService,
+            IShoppingCartService shoppingCartService,
             ILocalizationService localizationService,
             IUrlHelperFactory urlHelperFactory,
             IWebHelper webHelper)
@@ -68,6 +74,8 @@ namespace Nop.Plugin.Payments.OpenPay.Services
             _genericAttributeService = genericAttributeService;
             _orderTotalCalculationService = orderTotalCalculationService;
             _stateProvinceService = stateProvinceService;
+            _settingService = settingService;
+            _shoppingCartService = shoppingCartService;
             _currencyService = currencyService;
             _localizationService = localizationService;
             _urlHelperFactory = urlHelperFactory;
@@ -81,30 +89,40 @@ namespace Nop.Plugin.Payments.OpenPay.Services
         /// <summary>
         /// Returns the errors as <see cref="IList{string}"/> if plugin isn't configured; otherwise empty
         /// </summary>
+        /// <param name="storeId">The store id, pass null to use id of the current store</param>
         /// <returns>The errors as <see cref="IList{string}"/> if plugin isn't configured; otherwise empty</returns>
-        public virtual (bool IsValid, IList<string> Errors) Validate()
+        public virtual (bool IsValid, IList<string> Errors) Validate(int? storeId = null)
         {
+            OpenPayPaymentSettings openPayPaymentSettings = null;
+
+            if (!storeId.HasValue)
+                openPayPaymentSettings = _openPayPaymentSettings;
+            else
+            {
+                // load settings for specified store
+                openPayPaymentSettings = _settingService.LoadSetting<OpenPayPaymentSettings>(storeId.Value);
+            }
+
             var errors = new List<string>();
 
             // resolve validator here to exclude warnings after installation process
             var validator = EngineContext.Current.Resolve<IValidator<ConfigurationModel>>();
             var validationResult = validator.Validate(new ConfigurationModel
             {
-                ApiToken = _openPayPaymentSettings.ApiToken,
-                RegionTwoLetterIsoCode = _openPayPaymentSettings.RegionTwoLetterIsoCode,
-                PlanTiers = _openPayPaymentSettings.PlanTiers
+                ApiToken = openPayPaymentSettings.ApiToken,
+                RegionTwoLetterIsoCode = openPayPaymentSettings.RegionTwoLetterIsoCode,
+                PlanTiers = openPayPaymentSettings.PlanTiers
             });
 
             if (!validationResult.IsValid)
             {
                 errors.AddRange(validationResult.Errors.Select(error => error.ErrorMessage));
-
                 return (false, errors);
             }
 
             // check the primary store currency is available
             var region = Defaults.OpenPay.AvailableRegions.FirstOrDefault(
-                region => region.IsSandbox == _openPayPaymentSettings.UseSandbox && region.TwoLetterIsoCode == _openPayPaymentSettings.RegionTwoLetterIsoCode);
+                region => region.IsSandbox == openPayPaymentSettings.UseSandbox && region.TwoLetterIsoCode == openPayPaymentSettings.RegionTwoLetterIsoCode);
 
             var primaryStoreCurrency = _currencyService.GetCurrencyById(_currencySettings.PrimaryStoreCurrencyId);
             if (primaryStoreCurrency.CurrencyCode != region.CurrencyCode)
@@ -130,16 +148,22 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                 throw new ArgumentNullException(nameof(cart));
 
             if (!Validate().IsValid)
-                return false;
-
-            var cartTotal = _orderTotalCalculationService.GetShoppingCartTotal(cart);
-            if (!cartTotal.HasValue)
-                return false;
+                return false;   
 
             if (_openPayPaymentSettings.MinOrderTotal == 0 || _openPayPaymentSettings.MaxOrderTotal == 0)
                 return false;
 
+            var cartTotal = _orderTotalCalculationService.GetShoppingCartTotal(cart);
+            if (!cartTotal.HasValue)
+            {
+                _orderTotalCalculationService.GetShoppingCartSubTotal(cart, true, out _, out _, out _, out var subTotalWithDiscount);
+                cartTotal = subTotalWithDiscount;
+            }
+
             if (cartTotal < _openPayPaymentSettings.MinOrderTotal || cartTotal > _openPayPaymentSettings.MaxOrderTotal)
+                return false;
+
+            if (!_shoppingCartService.ShoppingCartRequiresShipping(cart))
                 return false;
 
             return true;
@@ -170,15 +194,20 @@ namespace Nop.Plugin.Payments.OpenPay.Services
             if (order is null)
                 throw new ArgumentNullException(nameof(order));
 
-            var errors = new List<string>();
-
             var validationResult = Validate();
             if (!validationResult.IsValid)
                 return (null, validationResult.Errors);
 
-            var shippingAddress = order.PickupInStore
-                ? _addressService.GetAddressById(order.PickupAddressId.Value)
-                : _addressService.GetAddressById(order.ShippingAddressId.Value);
+            var errors = new List<string>();
+
+            var shippingAddressId = order.PickupInStore ? order.PickupAddressId : order.ShippingAddressId;
+            if (!shippingAddressId.HasValue)
+            {
+                errors.Add($"Cannot process payment for order {order.CustomOrderNumber}. The shipping address not found.");
+                return (null, errors);
+            }
+
+            var shippingAddress = _addressService.GetAddressById(shippingAddressId.Value);
             if (shippingAddress == null)
             {
                 errors.Add($"Cannot process payment for order {order.CustomOrderNumber}. The shipping address not found.");
@@ -191,8 +220,7 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                 return (null, errors);
             }
 
-            var shippingState = _stateProvinceService
-                .GetStateProvinceById(shippingAddress.StateProvinceId.Value);
+            var shippingState = _stateProvinceService.GetStateProvinceById(shippingAddress.StateProvinceId.Value);
             if (shippingState == null)
             {
                 errors.Add($"Cannot process payment for order {order.CustomOrderNumber}. The state not found.");
@@ -215,9 +243,11 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                 return (null, errors);
             }
 
+            var email = _addressService.GetAddressById(order.BillingAddressId)?.Email ?? customer.Email;
+
             var customerDetails = new PersonalDetails
             {
-                Email = customer.Email,
+                Email = email,
                 DeliveryAddress = deliveryAddress
             };
 
@@ -297,11 +327,11 @@ namespace Nop.Plugin.Payments.OpenPay.Services
             if (order is null)
                 throw new ArgumentNullException(nameof(order));
 
-            var errors = new List<string>();
-
             var validationResult = Validate();
             if (!validationResult.IsValid)
                 return (null, validationResult.Errors);
+
+            var errors = new List<string>();
 
             try
             {
@@ -313,7 +343,7 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                 }
 
                 var captureResponse = _openPayApi.CaptureOrderByIdAsync(orderStatus.OrderId).Result;
-                if (orderStatus == null)
+                if (captureResponse == null)
                 {
                     errors.Add($"Cannot capture payment for order {order.CustomOrderNumber}.");
                     return (null, errors);
@@ -339,16 +369,16 @@ namespace Nop.Plugin.Payments.OpenPay.Services
             if (order is null)
                 throw new ArgumentNullException(nameof(order));
 
-            var errors = new List<string>();
-
             var validationResult = Validate();
             if (!validationResult.IsValid)
                 return (false, validationResult.Errors);
 
+            var errors = new List<string>();
+
             if (string.IsNullOrEmpty(order.CaptureTransactionId))
             {
                 errors.Add($"Cannot refund the OpenPay order. The captured transaction id is null.");
-                return (false, validationResult.Errors);
+                return (false, errors);
             }
 
             try

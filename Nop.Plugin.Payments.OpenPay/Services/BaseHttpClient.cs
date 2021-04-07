@@ -44,10 +44,7 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                 httpClient.DefaultRequestHeaders.Add(HeaderNames.Accept, "*/*");
                 httpClient.DefaultRequestHeaders.Add(Defaults.OpenPay.Api.VersionHeaderName, Defaults.OpenPay.Api.Version);
 
-                var userPasswordPair = settings.ApiToken.Replace("|", ":", StringComparison.InvariantCultureIgnoreCase);
-                var userPasswordBytes = Encoding.ASCII.GetBytes(userPasswordPair);
-                var encodedUserPasswordBytes = Convert.ToBase64String(userPasswordBytes);
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", encodedUserPasswordBytes);
+                SetApiToken(httpClient, settings.ApiToken);
 
                 return httpClient;
             });
@@ -57,12 +54,17 @@ namespace Nop.Plugin.Payments.OpenPay.Services
 
         #region Methods
 
+        public virtual void SetApiToken(string apiToken)
+        {
+            SetApiToken(HttpClient, apiToken);
+        }
+
         protected virtual Task<TResponse> GetAsync<TResponse>(string requestUri, [CallerMemberName] string callerName = "")
         {
             return CallAsync<TResponse>(() => HttpClient.GetAsync(requestUri), callerName);
         }
 
-        protected async virtual Task<TResponse> PostAsync<TResponse>(string requestUri, object request = null, [CallerMemberName] string callerName = "")
+        protected virtual async Task<TResponse> PostAsync<TResponse>(string requestUri, object request = null, [CallerMemberName] string callerName = "")
         {
             HttpContent body = null;
             if (request != null)
@@ -107,6 +109,21 @@ namespace Nop.Plugin.Payments.OpenPay.Services
             }
 
             return JsonConvert.DeserializeObject<TResponse>(responseContent);
+        }
+
+        #endregion
+
+        #region Utilities
+
+        private void SetApiToken(HttpClient httpClient, string apiToken)
+        {
+            if (apiToken is null)
+                throw new ArgumentNullException(nameof(apiToken));
+
+            var userPasswordPair = apiToken.Replace("|", ":", StringComparison.InvariantCultureIgnoreCase);
+            var userPasswordBytes = Encoding.ASCII.GetBytes(userPasswordPair);
+            var encodedUserPasswordBytes = Convert.ToBase64String(userPasswordBytes);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", encodedUserPasswordBytes);
         }
 
         #endregion

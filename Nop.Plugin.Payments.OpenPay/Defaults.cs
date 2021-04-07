@@ -44,12 +44,12 @@ namespace Nop.Plugin.Payments.OpenPay
         public static string OrderLimitsTaskName => "Order limits (OpenPay plugin)";
 
         /// <summary>
-        /// Gets a type of the synchronization schedule task
+        /// Gets a type of the order limits schedule task
         /// </summary>
-        public static string OrderLimitsTask => "Nop.Plugin.Misc.OpenPay.Services.OrderLimitsTask";
+        public static string OrderLimitsTask => "Nop.Plugin.Payments.OpenPay.Services.OrderLimitsTask";
 
         /// <summary>
-        /// Gets a default synchronization period in seconds
+        /// Gets a default period in seconds to run the order limits task
         /// </summary>
         public static int DefaultOrderLimitsTaskPeriodInSeconds => 24 * 60 * 60;
 
@@ -126,11 +126,6 @@ namespace Nop.Plugin.Payments.OpenPay
                 /// Gets the version header name
                 /// </summary>
                 public static string VersionHeaderName => "openpay-version";
-
-                /// <summary>
-                /// Gets the transaction token form field name
-                /// </summary>
-                public static string TransactionTokenFormFieldName => "TransactionToken";
 
                 /// <summary>
                 /// Gets the version

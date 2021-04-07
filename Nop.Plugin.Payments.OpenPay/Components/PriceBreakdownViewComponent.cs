@@ -6,6 +6,7 @@ using Nop.Core;
 using Nop.Core.Domain.Orders;
 using Nop.Plugin.Payments.OpenPay.Models;
 using Nop.Plugin.Payments.OpenPay.Services;
+using Nop.Services.Catalog;
 using Nop.Services.Directory;
 using Nop.Services.Orders;
 using Nop.Web.Framework.Components;
@@ -25,6 +26,7 @@ namespace Nop.Plugin.Payments.OpenPay.Components
         private readonly OpenPayService _openPayService;
         private readonly OpenPayPaymentSettings _openPayPaymentSettings;
         private readonly ICurrencyService _currencyService;
+        private readonly IProductService _productService;
         private readonly IOrderTotalCalculationService _orderTotalCalculationService;
         private readonly IShoppingCartService _shoppingCartService;
         private readonly IStoreContext _storeContext;
@@ -38,6 +40,7 @@ namespace Nop.Plugin.Payments.OpenPay.Components
             OpenPayService openPayService,
             OpenPayPaymentSettings openPayPaymentSettings,
             ICurrencyService currencyService,
+            IProductService productService,
             IOrderTotalCalculationService orderTotalCalculationService,
             IShoppingCartService shoppingCartService,
             IStoreContext storeContext,
@@ -46,6 +49,7 @@ namespace Nop.Plugin.Payments.OpenPay.Components
             _openPayService = openPayService;
             _openPayPaymentSettings = openPayPaymentSettings;
             _currencyService = currencyService;
+            _productService = productService;
             _orderTotalCalculationService = orderTotalCalculationService;
             _shoppingCartService = shoppingCartService;
             _storeContext = storeContext;
@@ -76,8 +80,8 @@ namespace Nop.Plugin.Payments.OpenPay.Components
                 RegionCode = region.TwoLetterIsoCode,
                 CurrencyCode = _workContext.WorkingCurrency.CurrencyCode,
                 PlanTiers = _openPayPaymentSettings.PlanTiers.Split(',').Select(x => int.Parse(x)).ToArray(),
-                MinEligibleAmount = ToWorkingPrice(_openPayPaymentSettings.MinOrderTotal / 100),
-                MaxEligibleAmount = ToWorkingPrice(_openPayPaymentSettings.MaxOrderTotal / 100),
+                MinEligibleAmount = ToWorkingCurrency(_openPayPaymentSettings.MinOrderTotal),
+                MaxEligibleAmount = ToWorkingCurrency(_openPayPaymentSettings.MaxOrderTotal),
                 Type = "Online"
             };
 
@@ -86,7 +90,11 @@ namespace Nop.Plugin.Payments.OpenPay.Components
                 if (!_openPayPaymentSettings.DisplayPriceBreakdownOnProductPage)
                     return Content(string.Empty);
 
-                model.Amount = ToWorkingPrice(productDetailsModel.ProductPrice.PriceValue);
+                var product = _productService.GetProductById(productDetailsModel.Id);
+                if (product == null || product.Deleted || product.IsDownload || !product.IsShipEnabled)
+                    return Content(string.Empty);
+
+                model.Amount = productDetailsModel.ProductPrice.PriceValue;
                 return View("~/Plugins/Payments.OpenPay/Views/PriceBreakdown/ProductPage.cshtml", model);
             }
             
@@ -95,7 +103,11 @@ namespace Nop.Plugin.Payments.OpenPay.Components
                 if (!_openPayPaymentSettings.DisplayPriceBreakdownInProductBox)
                     return Content(string.Empty);
 
-                model.Amount = ToWorkingPrice(productOverviewModel.ProductPrice.PriceValue);
+                var product = _productService.GetProductById(productOverviewModel.Id);
+                if (product == null || product.Deleted || product.IsDownload || !product.IsShipEnabled)
+                    return Content(string.Empty);
+
+                model.Amount = productOverviewModel.ProductPrice.PriceValue;
                 return View("~/Plugins/Payments.OpenPay/Views/PriceBreakdown/ProductListing.cshtml", model);
             }
 
@@ -114,11 +126,17 @@ namespace Nop.Plugin.Payments.OpenPay.Components
                 if (cart == null || !cart.Any())
                     return Content(string.Empty);
 
-                var cartTotal = _orderTotalCalculationService.GetShoppingCartTotal(cart);
-                if (!cartTotal.HasValue)
+                if (!_shoppingCartService.ShoppingCartRequiresShipping(cart))
                     return Content(string.Empty);
 
-                model.Amount = ToWorkingPrice(cartTotal.Value);
+                var cartTotal = _orderTotalCalculationService.GetShoppingCartTotal(cart);
+                if (!cartTotal.HasValue)
+                {
+                    _orderTotalCalculationService.GetShoppingCartSubTotal(cart, true, out _, out _, out _, out var subTotalWithDiscount);
+                    cartTotal = subTotalWithDiscount;
+                }
+
+                model.Amount = ToWorkingCurrency(cartTotal.Value);
                 return View("~/Plugins/Payments.OpenPay/Views/PriceBreakdown/Cart.cshtml", model);
             }
 
@@ -129,7 +147,7 @@ namespace Nop.Plugin.Payments.OpenPay.Components
 
         #region Utilities
 
-        private decimal ToWorkingPrice(decimal price)
+        private decimal ToWorkingCurrency(decimal price)
         {
             return _currencyService.ConvertFromPrimaryStoreCurrency(price, _workContext.WorkingCurrency);
         }

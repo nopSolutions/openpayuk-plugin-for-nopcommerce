@@ -73,6 +73,7 @@
                         <div class="panel-body">
                             <div class="form-group">
                                 <div class="col-md-3">
+                                    <nop-override-store-checkbox asp-for="DisplayPriceBreakdownOnProductPage_OverrideForStore" asp-input="DisplayPriceBreakdownOnProductPage" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
                                     <nop-label asp-for="DisplayPriceBreakdownOnProductPage" />
                                 </div>
                                 <div class="col-md-9">
@@ -82,6 +83,7 @@
                             </div>
                             <div class="form-group">
                                 <div class="col-md-3">
+                                    <nop-override-store-checkbox asp-for="DisplayPriceBreakdownInProductBox_OverrideForStore" asp-input="DisplayPriceBreakdownInProductBox" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
                                     <nop-label asp-for="DisplayPriceBreakdownInProductBox" />
                                 </div>
                                 <div class="col-md-9">
@@ -91,6 +93,7 @@
                             </div>
                             <div class="form-group">
                                 <div class="col-md-3">
+                                    <nop-override-store-checkbox asp-for="DisplayPriceBreakdownInShoppingCart_OverrideForStore" asp-input="DisplayPriceBreakdownInShoppingCart" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
                                     <nop-label asp-for="DisplayPriceBreakdownInShoppingCart" />
                                 </div>
                                 <div class="col-md-9">
@@ -100,6 +103,7 @@
                             </div>
                             <div class="form-group row">
                                 <div class="col-md-3">
+                                    <nop-override-store-checkbox asp-for="PlanTiers_OverrideForStore" asp-input="PlanTiers" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
                                     <nop-label asp-for="PlanTiers" />
                                 </div>
                                 <div class="col-md-9">

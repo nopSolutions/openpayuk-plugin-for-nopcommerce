@@ -6,7 +6,7 @@ using Nop.Plugin.Payments.OpenPay.Models;
 namespace Nop.Plugin.Payments.OpenPay.Services
 {
     /// <summary>
-    /// Provides an default implementation the HTTP client to interact with the OpenPay endpoints
+    /// Provides an default implementation of the HTTP client to interact with the OpenPay endpoints
     /// </summary>
     public class OpenPayApi : BaseHttpClient
     {

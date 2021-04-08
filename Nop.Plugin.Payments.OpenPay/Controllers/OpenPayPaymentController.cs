@@ -192,11 +192,13 @@ namespace Nop.Plugin.Payments.OpenPay.Controllers
 
             try
             {
-                var limits = await _openPayApi.GetOrderLimitsAsync();
-
                 //load settings for a chosen store scope
                 var storeScope = _storeContext.ActiveStoreScopeConfiguration;
                 var openPayPaymentSettings = _settingService.LoadSetting<OpenPayPaymentSettings>(storeScope);
+
+                _openPayApi.ConfigureClient(openPayPaymentSettings);
+
+                var limits = await _openPayApi.GetOrderLimitsAsync();
 
                 openPayPaymentSettings.MinOrderTotal = limits.MinPrice / 100;
                 openPayPaymentSettings.MaxOrderTotal = limits.MaxPrice / 100;

@@ -13,7 +13,7 @@ using Nop.Plugin.Payments.OpenPay.Models;
 namespace Nop.Plugin.Payments.OpenPay.Services
 {
     /// <summary>
-    /// Provides an abstraction for the HTTP client to interact with the endponit.
+    /// Provides an abstraction for the HTTP client to interact with the endpoint.
     /// </summary>
     public abstract class BaseHttpClient
     {
@@ -35,16 +35,13 @@ namespace Nop.Plugin.Payments.OpenPay.Services
         {
             _httpClient = new Lazy<HttpClient>(() => 
             {
-                var region = Defaults.OpenPay.AvailableRegions.FirstOrDefault(
-                    region => region.IsSandbox == settings.UseSandbox && region.TwoLetterIsoCode == settings.RegionTwoLetterIsoCode);
-
-                httpClient.BaseAddress = new Uri(region.ApiUrl, UriKind.RelativeOrAbsolute);
+                // set default settings
                 httpClient.Timeout = TimeSpan.FromSeconds(Defaults.OpenPay.Api.DefaultTimeout);
                 httpClient.DefaultRequestHeaders.Add(HeaderNames.UserAgent, Defaults.OpenPay.Api.UserAgent);
                 httpClient.DefaultRequestHeaders.Add(HeaderNames.Accept, "*/*");
                 httpClient.DefaultRequestHeaders.Add(Defaults.OpenPay.Api.VersionHeaderName, Defaults.OpenPay.Api.Version);
 
-                SetApiToken(httpClient, settings.ApiToken);
+                ConfigureClient(httpClient, settings);
 
                 return httpClient;
             });
@@ -54,9 +51,9 @@ namespace Nop.Plugin.Payments.OpenPay.Services
 
         #region Methods
 
-        public virtual void SetApiToken(string apiToken)
+        public virtual void ConfigureClient(OpenPayPaymentSettings settings)
         {
-            SetApiToken(HttpClient, apiToken);
+            ConfigureClient(HttpClient, settings);
         }
 
         protected virtual Task<TResponse> GetAsync<TResponse>(string requestUri, [CallerMemberName] string callerName = "")
@@ -115,12 +112,23 @@ namespace Nop.Plugin.Payments.OpenPay.Services
 
         #region Utilities
 
-        private void SetApiToken(HttpClient httpClient, string apiToken)
+        private void ConfigureClient(HttpClient httpClient, OpenPayPaymentSettings settings)
         {
-            if (apiToken is null)
-                throw new ArgumentNullException(nameof(apiToken));
+            if (settings is null)
+                throw new ArgumentNullException(nameof(settings));
 
-            var userPasswordPair = apiToken.Replace("|", ":", StringComparison.InvariantCultureIgnoreCase);
+            if (string.IsNullOrEmpty(settings.ApiToken))
+                throw new InvalidOperationException("The API token should not be null or empty.");
+
+            if (string.IsNullOrEmpty(settings.RegionTwoLetterIsoCode))
+                throw new InvalidOperationException("The region code should not be null or empty.");
+
+            var region = Defaults.OpenPay.AvailableRegions.FirstOrDefault(
+                region => region.IsSandbox == settings.UseSandbox && region.TwoLetterIsoCode == settings.RegionTwoLetterIsoCode);
+
+            httpClient.BaseAddress = new Uri(region.ApiUrl, UriKind.RelativeOrAbsolute);
+
+            var userPasswordPair = settings.ApiToken.Replace("|", ":", StringComparison.InvariantCultureIgnoreCase);
             var userPasswordBytes = Encoding.ASCII.GetBytes(userPasswordPair);
             var encodedUserPasswordBytes = Convert.ToBase64String(userPasswordBytes);
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", encodedUserPasswordBytes);

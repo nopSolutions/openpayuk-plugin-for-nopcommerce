@@ -57,8 +57,8 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                 }
 
                 var openPayPaymentSettings = _settingService.LoadSetting<OpenPayPaymentSettings>(store.Id);
-                
-                _openPayApi.SetApiToken(openPayPaymentSettings.ApiToken);
+
+                _openPayApi.ConfigureClient(openPayPaymentSettings);
 
                 try
                 {

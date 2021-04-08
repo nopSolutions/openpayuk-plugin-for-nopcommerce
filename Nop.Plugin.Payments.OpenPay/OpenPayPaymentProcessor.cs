@@ -278,7 +278,8 @@ namespace Nop.Plugin.Payments.OpenPay
                 DisplayPriceBreakdownOnProductPage = true,
                 DisplayPriceBreakdownInProductBox = true,
                 DisplayPriceBreakdownInShoppingCart = true,
-                PlanTiers = "2,4,6"
+                PlanTiers = "2,4,6",
+                LogCallbackErrors = true
             });
 
             if (!_widgetSettings.ActiveWidgetSystemNames.Contains(Defaults.SystemName))
@@ -346,6 +347,7 @@ namespace Nop.Plugin.Payments.OpenPay
                         <br />4. Click <i>Save</i> button
                         <br />5. Click <i>Get Min/Max limits</i> button
 	                    <br />
+                        <i>Note: The OpenPay payment method isn't available for the products that cannot be shipped.</i>
                     </p>",
             });
 

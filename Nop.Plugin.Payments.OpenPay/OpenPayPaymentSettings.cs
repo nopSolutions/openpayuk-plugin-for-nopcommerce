@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Nop.Core.Configuration;
+﻿using Nop.Core.Configuration;
 
 namespace Nop.Plugin.Payments.OpenPay
 {
@@ -64,6 +63,11 @@ namespace Nop.Plugin.Payments.OpenPay
         /// Gets or sets the available plan tiers you have available in months. E.g. [2,4,6] for 2 months, 4 months and 6 months
         /// </summary>
         public string PlanTiers { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to log callback errors after successful payment when user is redirect to merchant site
+        /// </summary>
+        public bool LogCallbackErrors { get; set; }
 
         #endregion
     }

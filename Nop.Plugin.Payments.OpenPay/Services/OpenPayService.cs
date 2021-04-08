@@ -243,11 +243,9 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                 return (null, errors);
             }
 
-            var email = _addressService.GetAddressById(order.BillingAddressId)?.Email ?? customer.Email;
-
             var customerDetails = new PersonalDetails
             {
-                Email = email,
+                Email = shippingAddress.Email ?? customer.Email,
                 DeliveryAddress = deliveryAddress
             };
 

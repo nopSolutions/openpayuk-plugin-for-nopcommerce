@@ -34,7 +34,10 @@ namespace Nop.Plugin.Payments.OpenPay.Services
         private readonly ICustomerService _customerService;
         private readonly ICurrencyService _currencyService;
         private readonly IGenericAttributeService _genericAttributeService;
+        private readonly IOrderService _orderService;
         private readonly IOrderTotalCalculationService _orderTotalCalculationService;
+        private readonly IProductService _productService;
+        private readonly IProductAttributeFormatter _productAttributeFormatter;
         private readonly IStateProvinceService _stateProvinceService;
         private readonly ISettingService _settingService;
         private readonly IShoppingCartService _shoppingCartService;
@@ -56,7 +59,10 @@ namespace Nop.Plugin.Payments.OpenPay.Services
             ICustomerService customerService,
             ICurrencyService currencyService,
             IGenericAttributeService genericAttributeService,
+            IOrderService orderService,
             IOrderTotalCalculationService orderTotalCalculationService,
+            IProductService productService,
+            IProductAttributeFormatter productAttributeFormatter,
             IStateProvinceService stateProvinceService,
             ISettingService settingService,
             IShoppingCartService shoppingCartService,
@@ -72,7 +78,10 @@ namespace Nop.Plugin.Payments.OpenPay.Services
             _actionContextAccessor = actionContextAccessor;
             _customerService = customerService;
             _genericAttributeService = genericAttributeService;
+            _orderService = orderService;
             _orderTotalCalculationService = orderTotalCalculationService;
+            _productService = productService;
+            _productAttributeFormatter = productAttributeFormatter;
             _stateProvinceService = stateProvinceService;
             _settingService = settingService;
             _shoppingCartService = shoppingCartService;
@@ -292,6 +301,43 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                 CustomerJourney = customerJourney,
                 RetailerOrderNo = order.Id.ToString()
             };
+
+            var orderItems = _orderService.GetOrderItems(order.Id);
+            if (orderItems?.Any() == true)
+            {
+                var cartItems = new List<CartItem>();
+                foreach (var item in orderItems)
+                {
+                    var product = _productService.GetProductById(item.ProductId);
+                    if (product == null)
+                    {
+                        errors.Add($"Cannot process payment for order {order.CustomOrderNumber}. Cannot get the product by id '{item.ProductId}'.");
+                        return (null, errors);
+                    }
+
+                    var productName = string.Empty;
+                    if (string.IsNullOrEmpty(item.AttributesXml))
+                        productName = product.Name;
+                    else
+                    {
+                        var attributeInfo = _productAttributeFormatter.FormatAttributes(product, item.AttributesXml, customer, ", ");
+                        productName = $"{product.Name} ({attributeInfo})";
+                    }
+
+                    var cartItem = new CartItem
+                    {
+                        Name = productName,
+                        Code = product.Id.ToString(),
+                        Quantity = item.Quantity.ToString(),
+                        UnitPrice = (int)(item.UnitPriceInclTax * 100),
+                        Charge = (int)(item.PriceInclTax * 100)
+                    };
+
+                    cartItems.Add(cartItem);
+                }
+
+                createOrderRequest.CartItems = cartItems.ToArray();
+            }
 
             try
             {

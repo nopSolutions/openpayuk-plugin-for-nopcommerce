@@ -16,7 +16,7 @@ namespace Nop.Plugin.Payments.OpenPay.Models
         public string Name { get; set; }
 
         /// <summary>
-        /// Gets or sets the description of the item used by the retailer
+        /// Gets or sets the internal stock number for this item
         /// </summary>
         [JsonProperty("itemCode")]
         public string Code { get; set; }

@@ -1,222 +1,124 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Nop.Core;
-using Nop.Core.Domain.Directory;
-using Nop.Plugin.Payments.OpenPay.Models;
 using Nop.Plugin.Payments.OpenPay.Services;
-using Nop.Services.Configuration;
-using Nop.Services.Directory;
 using Nop.Services.Localization;
+using Nop.Services.Logging;
 using Nop.Services.Messages;
-using Nop.Services.Security;
-using Nop.Web.Framework;
+using Nop.Services.Orders;
+using Nop.Services.Payments;
 using Nop.Web.Framework.Controllers;
-using Nop.Web.Framework.Mvc.Filters;
 
 namespace Nop.Plugin.Payments.OpenPay.Controllers
 {
-    [Area(AreaNames.Admin)]
-    [AutoValidateAntiforgeryToken]
-    [ValidateIpAddress]
-    [AuthorizeAdmin]
-    [ValidateVendor]
     public class OpenPayPaymentController : BasePaymentController
     {
         #region Fields
 
-        private readonly CurrencySettings _currencySettings;
         private readonly OpenPayApi _openPayApi;
-        private readonly ICountryService _countryService;
-        private readonly ICurrencyService _currencyService;
-        private readonly IPermissionService _permissionService;
-        private readonly ILocalizationService _localizationService;
+        private readonly OpenPayService _openPayService;
+        private readonly OpenPayPaymentSettings _openPayPaymentSettings;
+        private readonly IPaymentPluginManager _paymentPluginManager;
+        private readonly IOrderService _orderService;
+        private readonly IOrderProcessingService _orderProcessingService;
         private readonly INotificationService _notificationService;
-        private readonly ISettingService _settingService;
-        private readonly IStoreContext _storeContext;
+        private readonly ILocalizationService _localizationService;
+        private readonly ILogger _logger;
 
         #endregion
 
         #region Ctor
 
         public OpenPayPaymentController(
-            CurrencySettings currencySettings,
             OpenPayApi openPayApi,
-            ICountryService countryService,
-            ICurrencyService currencyService,
-            IPermissionService permissionService,
-            ILocalizationService localizationService,
+            OpenPayService openPayService,
+            OpenPayPaymentSettings openPayPaymentSettings,
+            IPaymentPluginManager paymentPluginManager,
+            IOrderService orderService,
+            IOrderProcessingService orderProcessingService,
             INotificationService notificationService,
-            ISettingService settingService,
-            IStoreContext storeContext
-        )
+            ILocalizationService localizationService,
+            ILogger logger)
         {
-            _currencySettings = currencySettings;
             _openPayApi = openPayApi;
-            _countryService = countryService;
-            _currencyService = currencyService;
-            _permissionService = permissionService;
-            _localizationService = localizationService;
+            _openPayService = openPayService;
+            _openPayPaymentSettings = openPayPaymentSettings;
+            _paymentPluginManager = paymentPluginManager;
+            _orderService = orderService;
+            _orderProcessingService = orderProcessingService;
             _notificationService = notificationService;
-            _settingService = settingService;
-            _storeContext = storeContext;
+            _localizationService = localizationService;
+            _logger = logger;
         }
 
         #endregion
 
         #region Methods
 
-        public IActionResult Configure()
+        public async Task<IActionResult> SuccessfulPayment(string status, string planId, int? orderId)
         {
-            if (!_permissionService.Authorize(StandardPermissionProvider.ManagePaymentMethods))
-                return AccessDeniedView();
+            if (!(_paymentPluginManager.LoadPluginBySystemName(Defaults.SystemName) is OpenPayPaymentProcessor processor) || !_paymentPluginManager.IsPluginActive(processor))
+                return ProduceErrorResponse();
 
-            //load settings for a chosen store scope
-            var storeScope = _storeContext.ActiveStoreScopeConfiguration;
-            var openPayPaymentSettings = _settingService.LoadSetting<OpenPayPaymentSettings>(storeScope);
+            if (!orderId.HasValue || string.IsNullOrEmpty(planId) || string.IsNullOrEmpty(status))
+                return ProduceErrorResponse();
 
-            var model = new ConfigurationModel
-            {
-                ActiveStoreScopeConfiguration = storeScope,
-                UseSandbox = openPayPaymentSettings.UseSandbox,
-                ApiToken = openPayPaymentSettings.ApiToken,
-                RegionTwoLetterIsoCode = openPayPaymentSettings.RegionTwoLetterIsoCode,
-                MinOrderTotal = openPayPaymentSettings.MinOrderTotal,
-                MaxOrderTotal = openPayPaymentSettings.MaxOrderTotal,
-                AdditionalFee = openPayPaymentSettings.AdditionalFee,
-                AdditionalFeePercentage = openPayPaymentSettings.AdditionalFeePercentage,
-                DisplayPriceBreakdownInProductBox = openPayPaymentSettings.DisplayPriceBreakdownInProductBox,
-                DisplayPriceBreakdownInShoppingCart = openPayPaymentSettings.DisplayPriceBreakdownInShoppingCart,
-                DisplayPriceBreakdownOnProductPage = openPayPaymentSettings.DisplayPriceBreakdownOnProductPage,
-                PlanTiers = openPayPaymentSettings.PlanTiers
-            };
+            var order = _orderService.GetOrderById(orderId.Value);
+            if (order == null || order.Deleted)
+                return ProduceErrorResponse(null, $"Invalid processing payment after the order successfully placed on OpenPay. The order '{order.CustomOrderNumber}' not found or was deleted.");
 
-            var availableCountryCodes = Defaults.OpenPay.AvailableRegions
-                .Select(region => region.TwoLetterIsoCode)
-                .Distinct();
+            var openPayOrder = await _openPayApi.GetOrderStatusByIdAsync(planId);
+            if (openPayOrder == null)
+                return ProduceErrorResponse(order.Id, $"Invalid processing payment after the order successfully placed on OpenPay. Cannot get the OpenPay order by id '{planId}'.");
 
-            foreach (var countryCode in availableCountryCodes)
-            {
-                var country = _countryService.GetCountryByTwoLetterIsoCode(countryCode);
-                if (country != null)
-                    model.AvailableRegions.Add(new SelectListItem(country.Name, country.TwoLetterIsoCode));
-            }
+            if (!openPayOrder.PlanStatus.Equals(status, StringComparison.InvariantCultureIgnoreCase))
+                return ProduceErrorResponse(order.Id, $"Invalid processing payment after the order successfully placed on OpenPay. The OpenPay plan status '{status}' is invalid.");
 
-            if (storeScope > 0)
-            {
-                model.UseSandbox_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.UseSandbox, storeScope);
-                model.ApiToken_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.ApiToken, storeScope);
-                model.RegionTwoLetterIsoCode_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.RegionTwoLetterIsoCode, storeScope);
-                model.MinOrderTotal_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.MinOrderTotal, storeScope);
-                model.MaxOrderTotal_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.MaxOrderTotal, storeScope);
-                model.AdditionalFee_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.AdditionalFee, storeScope);
-                model.AdditionalFeePercentage_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.AdditionalFeePercentage, storeScope);
-                model.DisplayPriceBreakdownInProductBox_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.DisplayPriceBreakdownInProductBox, storeScope);
-                model.DisplayPriceBreakdownInShoppingCart_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.DisplayPriceBreakdownInShoppingCart, storeScope);
-                model.DisplayPriceBreakdownOnProductPage_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.DisplayPriceBreakdownOnProductPage, storeScope);
-                model.PlanTiers_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.PlanTiers, storeScope);
-            }
+            if (!openPayOrder.OrderStatus.Equals("Pending", StringComparison.InvariantCultureIgnoreCase))
+                return ProduceErrorResponse(order.Id, $"Invalid processing payment after the order successfully placed on OpenPay. The OpenPay order status '{openPayOrder.OrderStatus}' is invalid.");
 
-            return View("~/Plugins/Payments.OpenPay/Views/Configure.cshtml", model);
+            if (!openPayOrder.PlanStatus.Equals("Lodged", StringComparison.InvariantCultureIgnoreCase))
+                return ProduceErrorResponse(order.Id, "Invalid processing payment after the order successfully placed on OpenPay. The OpenPay plan status should be 'Lodged'.");
+
+            if (!_orderProcessingService.CanMarkOrderAsPaid(order))
+                return ProduceErrorResponse(order.Id, $"Invalid processing payment after the order successfully placed on OpenPay. The order '{order.CustomOrderNumber}' already marked as paid.");
+
+            var result = _openPayService.CaptureOrder(order);
+            if (string.IsNullOrEmpty(result.OrderId))
+                return ProduceErrorResponse(order.Id, string.Join("\n", result.Errors));
+
+            order.CaptureTransactionId = result.OrderId;
+            _orderProcessingService.MarkOrderAsPaid(order);
+
+            _notificationService.SuccessNotification(
+                _localizationService.GetResource("Plugins.Payments.OpenPay.SuccessfulPayment"));
+
+            return RedirectToAction("Completed", "Checkout", new { orderId = order.Id });
         }
 
-        [HttpPost]
-        public IActionResult Configure(ConfigurationModel model)
+        public IActionResult LandingPage()
         {
-            if (!_permissionService.Authorize(StandardPermissionProvider.ManagePaymentMethods))
-                return AccessDeniedView();
-
-            if (!ModelState.IsValid)
-                return Configure();
-
-            // primary store currency must match the currency of the selected country
-            var selectedRegion = Defaults.OpenPay.AvailableRegions
-                .FirstOrDefault(region => region.TwoLetterIsoCode == model.RegionTwoLetterIsoCode);
-
-            var primaryStoreCurrency = _currencyService.GetCurrencyById(_currencySettings.PrimaryStoreCurrencyId);
-            if (primaryStoreCurrency.CurrencyCode != selectedRegion.CurrencyCode)
-            {
-                var invalidCurrencyLocale = _localizationService.GetResource("Plugins.Payments.OpenPay.InvalidCurrency");
-                var invalidCurrencyMessage = string.Format(invalidCurrencyLocale, selectedRegion.TwoLetterIsoCode, selectedRegion.CurrencyCode);
-                _notificationService.WarningNotification(invalidCurrencyMessage);
-            }
-
-            //load settings for a chosen store scope
-            var storeScope = _storeContext.ActiveStoreScopeConfiguration;
-            var openPayPaymentSettings = _settingService.LoadSetting<OpenPayPaymentSettings>(storeScope);
-
-            //sort plan tiers
-            var convertedPlanTiers = model.PlanTiers.Split(',').Select(x => int.Parse(x)).ToArray();
-            Array.Sort(convertedPlanTiers);
-
-            //save settings
-            openPayPaymentSettings.UseSandbox = model.UseSandbox;
-            openPayPaymentSettings.ApiToken = model.ApiToken;
-            openPayPaymentSettings.RegionTwoLetterIsoCode = model.RegionTwoLetterIsoCode;
-            openPayPaymentSettings.AdditionalFee = model.AdditionalFee;
-            openPayPaymentSettings.AdditionalFeePercentage = model.AdditionalFeePercentage;
-            openPayPaymentSettings.DisplayPriceBreakdownInProductBox = model.DisplayPriceBreakdownInProductBox;
-            openPayPaymentSettings.DisplayPriceBreakdownInShoppingCart = model.DisplayPriceBreakdownInShoppingCart;
-            openPayPaymentSettings.DisplayPriceBreakdownOnProductPage = model.DisplayPriceBreakdownOnProductPage;
-            openPayPaymentSettings.PlanTiers = string.Join(",", convertedPlanTiers);
+            if (!(_paymentPluginManager.LoadPluginBySystemName(Defaults.SystemName) is OpenPayPaymentProcessor processor) || !_paymentPluginManager.IsPluginActive(processor))
+                return RedirectToAction("Index", "Home");
             
-            /* We do not clear cache after each setting update.
-             * This behavior can increase performance because cached settings will not be cleared 
-             * and loaded from database after each update */
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.UseSandbox, model.UseSandbox_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.ApiToken, model.ApiToken_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.RegionTwoLetterIsoCode, model.RegionTwoLetterIsoCode_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.AdditionalFee, model.AdditionalFee_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.AdditionalFeePercentage, model.AdditionalFeePercentage_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.DisplayPriceBreakdownInProductBox, model.DisplayPriceBreakdownInProductBox_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.DisplayPriceBreakdownInShoppingCart, model.DisplayPriceBreakdownInShoppingCart_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.DisplayPriceBreakdownOnProductPage, model.DisplayPriceBreakdownOnProductPage_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.PlanTiers, model.PlanTiers_OverrideForStore, storeScope, false);
-
-            //now clear settings cache
-            _settingService.ClearCache();
-
-            _notificationService.SuccessNotification(_localizationService.GetResource("Admin.Plugins.Saved"));
-
-            return RedirectToAction("Configure");
+            return ViewComponent(Defaults.WIDGET_VIEW_COMPONENT_NAME, new { widgetZone = "OpenPayLandingPage" });
         }
 
-        [HttpPost, ActionName("Configure")]
-        [FormValueRequired("get-order-limits")]
-        public async Task<IActionResult> GetOrderLimits(ConfigurationModel model)
+        #endregion
+
+        #region Utilities
+
+        private IActionResult ProduceErrorResponse(int? orderId = null, string errorMessage = null)
         {
-            if (!ModelState.IsValid)
-                return Configure();
+            if (!string.IsNullOrEmpty(errorMessage) && _openPayPaymentSettings.LogCallbackErrors)
+                _logger.Error($"{Defaults.SystemName}: {errorMessage}");
 
-            try
-            {
-                //load settings for a chosen store scope
-                var storeScope = _storeContext.ActiveStoreScopeConfiguration;
-                var openPayPaymentSettings = _settingService.LoadSetting<OpenPayPaymentSettings>(storeScope);
+            _notificationService.ErrorNotification(
+                _localizationService.GetResource("Plugins.Payments.OpenPay.InvalidPayment"));
 
-                _openPayApi.ConfigureClient(openPayPaymentSettings);
-
-                var limits = await _openPayApi.GetOrderLimitsAsync();
-
-                openPayPaymentSettings.MinOrderTotal = limits.MinPrice / 100;
-                openPayPaymentSettings.MaxOrderTotal = limits.MaxPrice / 100;
-
-                _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.MinOrderTotal, model.MinOrderTotal_OverrideForStore, storeScope, false);
-                _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.MaxOrderTotal, model.MaxOrderTotal_OverrideForStore, storeScope, false);
-
-                //now clear settings cache
-                _settingService.ClearCache();
-
-                _notificationService.SuccessNotification(_localizationService.GetResource("Plugins.Payments.OpenPay.OrderLimitsDownloaded"));
-            }
-            catch (ApiException ex)
-            {
-                _notificationService.ErrorNotification(ex.Message);
-            }
-
-            return RedirectToAction("Configure");
+            return orderId.HasValue
+                ? RedirectToAction("Details", "Order", new { orderId })
+                : RedirectToAction("Index", "Home");
         }
 
         #endregion

@@ -1,0 +1,9 @@
+﻿@model WidgetModel
+
+@{
+    Layout = "_ColumnsOne";
+}
+
+@await Html.PartialAsync("~/Plugins/Payments.OpenPay/Views/Widget/_Config.cshtml", Model)
+
+<opy-landing-page></opy-landing-page>

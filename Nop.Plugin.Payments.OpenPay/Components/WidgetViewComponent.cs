@@ -16,10 +16,10 @@ using Nop.Web.Models.Catalog;
 namespace Nop.Plugin.Payments.OpenPay.Components
 {
     /// <summary>
-    /// Represents the view component to display the price breakdown in public store
+    /// Represents the view component to display the OpenPay widget in public store
     /// </summary>
-    [ViewComponent(Name = Defaults.PRICE_BREAKDOWN_VIEW_COMPONENT_NAME)]
-    public class PriceBreakdownViewComponent : NopViewComponent
+    [ViewComponent(Name = Defaults.WIDGET_VIEW_COMPONENT_NAME)]
+    public class WidgetViewComponent : NopViewComponent
     {
         #region Fields
 
@@ -36,7 +36,7 @@ namespace Nop.Plugin.Payments.OpenPay.Components
 
         #region Ctor
 
-        public PriceBreakdownViewComponent(
+        public WidgetViewComponent(
             OpenPayService openPayService,
             OpenPayPaymentSettings openPayPaymentSettings,
             ICurrencyService currencyService,
@@ -71,10 +71,18 @@ namespace Nop.Plugin.Payments.OpenPay.Components
             if (!_openPayService.CanDisplayWidget())
                 return Content(string.Empty);
 
+            if (widgetZone == PublicWidgetZones.BodyEndHtmlTagBefore)
+            {
+                if (!_openPayPaymentSettings.DisplayLandingPageWidget)
+                    return Content(string.Empty);
+
+                return View("~/Plugins/Payments.OpenPay/Views/Widget/LandingPageLink.cshtml");
+            }
+
             var region = Defaults.OpenPay.AvailableRegions.FirstOrDefault(
                 region => region.IsSandbox == _openPayPaymentSettings.UseSandbox && region.TwoLetterIsoCode == _openPayPaymentSettings.RegionTwoLetterIsoCode);
 
-            var model = new PriceBreakdownModel
+            var model = new WidgetModel
             {
                 WidgetCode = region.WidgetCode,
                 RegionCode = region.TwoLetterIsoCode,
@@ -87,33 +95,39 @@ namespace Nop.Plugin.Payments.OpenPay.Components
 
             if (widgetZone == PublicWidgetZones.ProductDetailsBottom && additionalData is ProductDetailsModel productDetailsModel)
             {
-                if (!_openPayPaymentSettings.DisplayPriceBreakdownOnProductPage)
+                if (!_openPayPaymentSettings.DisplayProductPageWidget)
                     return Content(string.Empty);
 
                 var product = _productService.GetProductById(productDetailsModel.Id);
                 if (product == null || product.Deleted || product.IsDownload || !product.IsShipEnabled)
                     return Content(string.Empty);
 
+                model.Logo = _openPayPaymentSettings.ProductPageWidgetLogo;
+                model.LogoPosition = _openPayPaymentSettings.ProductPageWidgetLogoPosition;
                 model.Amount = productDetailsModel.ProductPrice.PriceValue;
-                return View("~/Plugins/Payments.OpenPay/Views/PriceBreakdown/ProductPage.cshtml", model);
+
+                return View("~/Plugins/Payments.OpenPay/Views/Widget/ProductPage.cshtml", model);
             }
             
             if (widgetZone == PublicWidgetZones.ProductBoxAddinfoMiddle && additionalData is ProductOverviewModel productOverviewModel)
             {
-                if (!_openPayPaymentSettings.DisplayPriceBreakdownInProductBox)
+                if (!_openPayPaymentSettings.DisplayProductListingWidget)
                     return Content(string.Empty);
 
                 var product = _productService.GetProductById(productOverviewModel.Id);
                 if (product == null || product.Deleted || product.IsDownload || !product.IsShipEnabled)
                     return Content(string.Empty);
 
+                model.Logo = _openPayPaymentSettings.ProductListingWidgetLogo;
+                model.HideLogo = _openPayPaymentSettings.ProductListingHideLogo;
                 model.Amount = productOverviewModel.ProductPrice.PriceValue;
-                return View("~/Plugins/Payments.OpenPay/Views/PriceBreakdown/ProductListing.cshtml", model);
+
+                return View("~/Plugins/Payments.OpenPay/Views/Widget/ProductListing.cshtml", model);
             }
 
             if (widgetZone == PublicWidgetZones.OrderSummaryContentAfter)
             {
-                if (!_openPayPaymentSettings.DisplayPriceBreakdownInShoppingCart)
+                if (!_openPayPaymentSettings.DisplayCartWidget)
                     return Content(string.Empty);
 
                 var routeName = HttpContext.GetEndpoint()?.Metadata.GetMetadata<RouteNameMetadata>()?.RouteName;
@@ -136,8 +150,28 @@ namespace Nop.Plugin.Payments.OpenPay.Components
                     cartTotal = subTotalWithDiscount;
                 }
 
+                model.Logo = _openPayPaymentSettings.CartWidgetLogo;
                 model.Amount = ToWorkingCurrency(cartTotal.Value);
-                return View("~/Plugins/Payments.OpenPay/Views/PriceBreakdown/Cart.cshtml", model);
+
+                return View("~/Plugins/Payments.OpenPay/Views/Widget/Cart.cshtml", model);
+            }
+
+            if (widgetZone == PublicWidgetZones.BodyStartHtmlTagAfter)
+            {
+                if (!_openPayPaymentSettings.DisplayInfoBeltWidget)
+                    return Content(string.Empty);
+
+                model.Color = _openPayPaymentSettings.InfoBeltWidgetColor;
+
+                return View("~/Plugins/Payments.OpenPay/Views/Widget/InfoBelt.cshtml", model);
+            }
+
+            if (widgetZone == "OpenPayLandingPage")
+            {
+                if (!_openPayPaymentSettings.DisplayLandingPageWidget)
+                    return Content(string.Empty);
+
+                return View("~/Plugins/Payments.OpenPay/Views/Widget/LandingPage.cshtml", model);
             }
 
             return Content(string.Empty);

@@ -1,0 +1,5 @@
+﻿<script asp-location="Footer">
+    $(document).ready(function () {
+        $('.footer-block.information .list').append('<li><a href="@Url.RouteUrl("OpenPayLandingPage")">@T("Plugins.Payments.OpenPay.LandingPageLinkName")</a></li>');
+    });
+</script>

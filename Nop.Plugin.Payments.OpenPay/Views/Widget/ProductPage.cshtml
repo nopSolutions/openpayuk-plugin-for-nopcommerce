@@ -1,0 +1,9 @@
+﻿@model WidgetModel
+
+@await Html.PartialAsync("~/Plugins/Payments.OpenPay/Views/Widget/_Config.cshtml", Model)
+
+<script asp-location="Footer">
+    $(document).ready(function () {
+        $('div.add-info + div.prices, div.overview > div.prices').after('<opy-product-page amount="@Model.Amount" logo="@Model.Logo" more-info-text"@T("Plugins.Payments.OpenPay.ProductPageWidgetMoreInfoText")"></opy-product-page>');
+    });
+</script>

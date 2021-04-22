@@ -3,9 +3,9 @@
 namespace Nop.Plugin.Payments.OpenPay.Models
 {
     /// <summary>
-    /// Represents a model to display the price breakdown in public store
+    /// Represents a widget model
     /// </summary>
-    public class PriceBreakdownModel : BaseNopModel
+    public class WidgetModel : BaseNopModel
     {
         #region Properties
 
@@ -48,6 +48,31 @@ namespace Nop.Plugin.Payments.OpenPay.Models
         /// Gets or sets the amount
         /// </summary>
         public decimal Amount { get; set; }
+
+        /// <summary>
+        /// Gets or sets the logo
+        /// </summary>
+        public string Logo { get; set; }
+
+        /// <summary>
+        /// Gets or sets the color
+        /// </summary>
+        public bool HideLogo { get; set; }
+
+        /// <summary>
+        /// Gets or sets the color
+        /// </summary>
+        public string LogoPosition { get; set; }
+
+        /// <summary>
+        /// Gets or sets the more info text
+        /// </summary>
+        public string MoreInfoText { get; set; }
+
+        /// <summary>
+        /// Gets or sets the color
+        /// </summary>
+        public string Color { get; set; }
 
         #endregion
     }

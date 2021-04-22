@@ -21,10 +21,13 @@
     <None Remove="logo.png" />
     <None Remove="plugin.json" />
     <None Remove="Views\Configure.cshtml" />
-    <None Remove="Views\PriceBreakdown\Cart.cshtml" />
-    <None Remove="Views\PriceBreakdown\ProductListing.cshtml" />
-    <None Remove="Views\PriceBreakdown\ProductPage.cshtml" />
-    <None Remove="Views\PriceBreakdown\_Config.cshtml" />
+    <None Remove="Views\Widget\Cart.cshtml" />
+    <None Remove="Views\Widget\InfoBelt.cshtml" />
+    <None Remove="Views\Widget\LandingPage.cshtml" />
+    <None Remove="Views\Widget\LandingPageLink.cshtml" />
+    <None Remove="Views\Widget\ProductListing.cshtml" />
+    <None Remove="Views\Widget\ProductPage.cshtml" />
+    <None Remove="Views\Widget\_Config.cshtml" />
     <None Remove="Views\_ViewImports.cshtml" />
   </ItemGroup>
 
@@ -38,16 +41,25 @@
     <Content Include="Views\Configure.cshtml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Views\PriceBreakdown\Cart.cshtml">
+    <Content Include="Views\Widget\LandingPage.cshtml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Views\PriceBreakdown\ProductListing.cshtml">
+    <Content Include="Views\Widget\LandingPageLink.cshtml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Views\PriceBreakdown\ProductPage.cshtml">
+    <Content Include="Views\Widget\InfoBelt.cshtml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Views\PriceBreakdown\_Config.cshtml">
+    <Content Include="Views\Widget\Cart.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Views\Widget\ProductListing.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Views\Widget\ProductPage.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Views\Widget\_Config.cshtml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Views\_ViewImports.cshtml">

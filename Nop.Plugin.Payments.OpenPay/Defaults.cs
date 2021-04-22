@@ -22,6 +22,11 @@ namespace Nop.Plugin.Payments.OpenPay
         /// Gets the callback route name after successful payment
         /// </summary>
         public static string SuccessfulPaymentWebhookRouteName => "OpenPaySuccessfulPaymentWebhook";
+        
+        /// <summary>
+        /// Gets the callback OpenPay landing page route name
+        /// </summary>
+        public static string OpenPayLandingPageRouteName => "OpenPayLandingPage";
 
         /// <summary>
         /// Gets the order details route name
@@ -34,9 +39,9 @@ namespace Nop.Plugin.Payments.OpenPay
         public static string ShoppingCartRouteName => "ShoppingCart";
 
         /// <summary>
-        /// Gets a name of the view component to display the price breakdown in public store
+        /// Gets a name of the view component to display the OpenPay widget in public store
         /// </summary>
-        public const string PRICE_BREAKDOWN_VIEW_COMPONENT_NAME = "OpenPayPriceBreakdown";
+        public const string WIDGET_VIEW_COMPONENT_NAME = "OpenPayWidget";
 
         /// <summary>
         /// Gets a name of the order limits schedule task

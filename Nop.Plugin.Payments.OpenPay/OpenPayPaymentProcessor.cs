@@ -275,11 +275,19 @@ namespace Nop.Plugin.Payments.OpenPay
             _settingService.SaveSetting(new OpenPayPaymentSettings
             {
                 UseSandbox = true,
-                DisplayPriceBreakdownOnProductPage = true,
-                DisplayPriceBreakdownInProductBox = true,
-                DisplayPriceBreakdownInShoppingCart = true,
+                DisplayProductPageWidget = true,
+                DisplayProductListingWidget = true,
+                DisplayCartWidget = true,
+                DisplayInfoBeltWidget = true,
+                DisplayLandingPageWidget = true,
                 PlanTiers = "2,4,6",
-                LogCallbackErrors = true
+                LogCallbackErrors = true,
+                CartWidgetLogo = "grey-on-amberbg",
+                InfoBeltWidgetColor = "white",
+                ProductListingWidgetLogo = "grey",
+                ProductListingHideLogo = false,
+                ProductPageWidgetLogo = "grey-on-amberbg",
+                ProductPageWidgetLogoPosition = "left"
             });
 
             if (!_widgetSettings.ActiveWidgetSystemNames.Contains(Defaults.SystemName))
@@ -308,6 +316,12 @@ namespace Nop.Plugin.Payments.OpenPay
                 ["Plugins.Payments.OpenPay.Fields.ApiToken"] = "API Token",
                 ["Plugins.Payments.OpenPay.Fields.ApiToken.Hint"] = "Enter the token to sign the API requests.",
                 ["Plugins.Payments.OpenPay.Fields.ApiToken.Required"] = "The API Token is required.",
+                ["Plugins.Payments.OpenPay.Fields.CartWidgetLogo"] = "Logo style",
+                ["Plugins.Payments.OpenPay.Fields.CartWidgetLogo.Hint"] = "Enter the logo style of the cart widget.",
+                ["Plugins.Payments.OpenPay.Fields.InfoBeltWidgetColor"] = "Color style",
+                ["Plugins.Payments.OpenPay.Fields.InfoBeltWidgetColor.Hint"] = "Enter the color style of the info belt widget.",
+                ["Plugins.Payments.OpenPay.Fields.ProductListingWidgetLogo"] = "Logo style",
+                ["Plugins.Payments.OpenPay.Fields.ProductListingWidgetLogo.Hint"] = "Enter the logo style of the product listing widget.",
                 ["Plugins.Payments.OpenPay.Fields.RegionTwoLetterIsoCode"] = "Payment from applicable country",
                 ["Plugins.Payments.OpenPay.Fields.RegionTwoLetterIsoCode.Hint"] = "Select the applicable country. Note that the primary store currency must match the currency of the country.",
                 ["Plugins.Payments.OpenPay.Fields.RegionTwoLetterIsoCode.Required"] = "The country is required.",
@@ -319,15 +333,25 @@ namespace Nop.Plugin.Payments.OpenPay
                 ["Plugins.Payments.OpenPay.Fields.AdditionalFee.Hint"] = "Enter additional fee to charge your customers.",
                 ["Plugins.Payments.OpenPay.Fields.AdditionalFeePercentage"] = "Additional fee. Use percentage",
                 ["Plugins.Payments.OpenPay.Fields.AdditionalFeePercentage.Hint"] = "Determines whether to apply a percentage additional fee to the order total. If not enabled, a fixed value is used.",
-                ["Plugins.Payments.OpenPay.Fields.DisplayPriceBreakdownOnProductPage"] = "Display on product page",
-                ["Plugins.Payments.OpenPay.Fields.DisplayPriceBreakdownOnProductPage.Hint"] = "Check to display price breakdown on a product page.",
-                ["Plugins.Payments.OpenPay.Fields.DisplayPriceBreakdownInProductBox"] = "Display in product box",
-                ["Plugins.Payments.OpenPay.Fields.DisplayPriceBreakdownInProductBox.Hint"] = "Check to display price breakdown in a product box (e.g. on a category page).",
-                ["Plugins.Payments.OpenPay.Fields.DisplayPriceBreakdownInShoppingCart"] = "Display in shopping cart",
-                ["Plugins.Payments.OpenPay.Fields.DisplayPriceBreakdownInShoppingCart.Hint"] = "Check to display price breakdown in the shopping cart.",
+                ["Plugins.Payments.OpenPay.Fields.DisplayProductPageWidget"] = "Display the product page widget",
+                ["Plugins.Payments.OpenPay.Fields.DisplayProductPageWidget.Hint"] = "Check to display the product page widget on a product page.",
+                ["Plugins.Payments.OpenPay.Fields.DisplayProductListingWidget"] = "Display the product listing widget",
+                ["Plugins.Payments.OpenPay.Fields.DisplayProductListingWidget.Hint"] = "Check to display the product listing widget in a product box (e.g. on a category page).",
+                ["Plugins.Payments.OpenPay.Fields.ProductListingHideLogo"] = "Hide logo",
+                ["Plugins.Payments.OpenPay.Fields.ProductListingHideLogo.Hint"] = "Check to hide the logo of the product listing widget.",
+                ["Plugins.Payments.OpenPay.Fields.DisplayCartWidget"] = "Display the cart widget",
+                ["Plugins.Payments.OpenPay.Fields.DisplayCartWidget.Hint"] = "Check to display the cart widget in the shopping cart.",
+                ["Plugins.Payments.OpenPay.Fields.DisplayInfoBeltWidget"] = "Display the info belt widget",
+                ["Plugins.Payments.OpenPay.Fields.DisplayInfoBeltWidget.Hint"] = "Check to display the info belt in the page head.",
+                ["Plugins.Payments.OpenPay.Fields.DisplayLandingPageWidget"] = "Display the landing page widget",
+                ["Plugins.Payments.OpenPay.Fields.DisplayLandingPageWidget.Hint"] = "Check to display the landing page link in footer.",
                 ["Plugins.Payments.OpenPay.Fields.PlanTiers"] = "Plan tiers",
                 ["Plugins.Payments.OpenPay.Fields.PlanTiers.Hint"] = "Enter the plan tiers in months. E.g. '2,4,6' for 2 months, 4 months and 6 months.",
                 ["Plugins.Payments.OpenPay.Fields.PlanTiers.Required"] = "The plan tiers are required.",
+                ["Plugins.Payments.OpenPay.Fields.ProductPageWidgetLogo"] = "Logo style",
+                ["Plugins.Payments.OpenPay.Fields.ProductPageWidgetLogo.Hint"] = "Enter the logo style of the product page widget.",
+                ["Plugins.Payments.OpenPay.Fields.ProductPageWidgetLogoPosition"] = "Logo position",
+                ["Plugins.Payments.OpenPay.Fields.ProductPageWidgetLogoPosition.Hint"] = "Enter the logo position of the product page widget.",
                 ["Plugins.Payments.OpenPay.PaymentMethodDescription"] = "Pay by OpenPay",
                 ["Plugins.Payments.OpenPay.InvalidCurrency"] = "The primary store currency must match the currency of the country '{0}'. You must set the primary store currency to '{1}'.",
                 ["Plugins.Payments.OpenPay.DownloadOrderLimitsButton"] = "Get Min/Max limits",
@@ -336,8 +360,11 @@ namespace Nop.Plugin.Payments.OpenPay
                 ["Plugins.Payments.OpenPay.IsNotConfigured"] = "Plugin isn't configured.",
                 ["Plugins.Payments.OpenPay.SuccessfulPayment"] = "The payment was successful. Thanks you.",
                 ["Plugins.Payments.OpenPay.InvalidPayment"] = "The payment was not processed. Please try again or contact with store owner.",
-                ["Plugins.Payments.OpenPay.PriceBreakdown"] = "OpenPay price breakdown",
+                ["Plugins.Payments.OpenPay.CartWidgetMoreInfoText"] = "Learn more",
+                ["Plugins.Payments.OpenPay.ProductPageWidgetMoreInfoText"] = "Learn more",
+                ["Plugins.Payments.OpenPay.Widgets"] = "Widgets",
                 ["Plugins.Payments.OpenPay.OrderLimits"] = "Order limits",
+                ["Plugins.Payments.OpenPay.LandingPageLinkName"] = "Openpay",
                 ["Plugins.Payments.OpenPay.OrderLimitsDescription"] = "Click <i>Get Min/Max limits</i> button to get the currently configured Min and Max purchase price range. This is necessary in order to not display Openpay as a payment option if the order total is not within the range. You can get the order limits only 3 times on any given calendar day. Also you can configure the background task <a href=\"{0}\" target=\"_blank\">here</a> to get the order limits periodically.",
                 ["Plugins.Payments.OpenPay.Instructions"] = @"
                     <p>
@@ -390,6 +417,8 @@ namespace Nop.Plugin.Payments.OpenPay
                 PublicWidgetZones.ProductDetailsBottom,
                 PublicWidgetZones.ProductBoxAddinfoMiddle,
                 PublicWidgetZones.OrderSummaryContentAfter,
+                PublicWidgetZones.BodyStartHtmlTagAfter,
+                PublicWidgetZones.BodyEndHtmlTagBefore
             };
         }
 
@@ -405,9 +434,11 @@ namespace Nop.Plugin.Payments.OpenPay
 
             if (widgetZone.Equals(PublicWidgetZones.ProductDetailsBottom) ||
                 widgetZone.Equals(PublicWidgetZones.ProductBoxAddinfoMiddle) ||
-                widgetZone.Equals(PublicWidgetZones.OrderSummaryContentAfter))
+                widgetZone.Equals(PublicWidgetZones.OrderSummaryContentAfter) ||
+                widgetZone.Equals(PublicWidgetZones.BodyStartHtmlTagAfter) ||
+                widgetZone.Equals(PublicWidgetZones.BodyEndHtmlTagBefore))
             {
-                return Defaults.PRICE_BREAKDOWN_VIEW_COMPONENT_NAME;
+                return Defaults.WIDGET_VIEW_COMPONENT_NAME;
             }
 
             return string.Empty;

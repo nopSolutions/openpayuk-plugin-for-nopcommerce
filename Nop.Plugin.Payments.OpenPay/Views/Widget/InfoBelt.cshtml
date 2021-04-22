@@ -1,0 +1,5 @@
+﻿@model WidgetModel
+
+@await Html.PartialAsync("~/Plugins/Payments.OpenPay/Views/Widget/_Config.cshtml", Model)
+
+<opy-info-belt color="@Model.Color"></opy-info-belt>

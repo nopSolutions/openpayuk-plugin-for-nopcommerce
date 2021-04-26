@@ -263,7 +263,7 @@ namespace Nop.Plugin.Payments.OpenPay
         /// <returns>View component name</returns>
         public string GetPublicViewComponentName()
         {
-            return null;
+            return Defaults.PAYMENT_INFO_VIEW_COMPONENT_NAME;
         }
 
         /// <summary>
@@ -317,11 +317,11 @@ namespace Nop.Plugin.Payments.OpenPay
                 ["Plugins.Payments.OpenPay.Fields.ApiToken.Hint"] = "Enter the token to sign the API requests.",
                 ["Plugins.Payments.OpenPay.Fields.ApiToken.Required"] = "The API Token is required.",
                 ["Plugins.Payments.OpenPay.Fields.CartWidgetLogo"] = "Logo style",
-                ["Plugins.Payments.OpenPay.Fields.CartWidgetLogo.Hint"] = "Enter the logo style of the cart widget.",
+                ["Plugins.Payments.OpenPay.Fields.CartWidgetLogo.Hint"] = "Enter the logo style of the cart widget (e.g. 'grey-on-amberbg' or 'grey').",
                 ["Plugins.Payments.OpenPay.Fields.InfoBeltWidgetColor"] = "Color style",
-                ["Plugins.Payments.OpenPay.Fields.InfoBeltWidgetColor.Hint"] = "Enter the color style of the info belt widget.",
+                ["Plugins.Payments.OpenPay.Fields.InfoBeltWidgetColor.Hint"] = "Enter the color style of the info belt widget (e.g. 'amber', 'white' or 'grey').",
                 ["Plugins.Payments.OpenPay.Fields.ProductListingWidgetLogo"] = "Logo style",
-                ["Plugins.Payments.OpenPay.Fields.ProductListingWidgetLogo.Hint"] = "Enter the logo style of the product listing widget.",
+                ["Plugins.Payments.OpenPay.Fields.ProductListingWidgetLogo.Hint"] = "Enter the logo style of the product listing widget (e.g. 'grey' or 'white').",
                 ["Plugins.Payments.OpenPay.Fields.RegionTwoLetterIsoCode"] = "Payment from applicable country",
                 ["Plugins.Payments.OpenPay.Fields.RegionTwoLetterIsoCode.Hint"] = "Select the applicable country. Note that the primary store currency must match the currency of the country.",
                 ["Plugins.Payments.OpenPay.Fields.RegionTwoLetterIsoCode.Required"] = "The country is required.",
@@ -349,9 +349,9 @@ namespace Nop.Plugin.Payments.OpenPay
                 ["Plugins.Payments.OpenPay.Fields.PlanTiers.Hint"] = "Enter the plan tiers in months. E.g. '2,4,6' for 2 months, 4 months and 6 months.",
                 ["Plugins.Payments.OpenPay.Fields.PlanTiers.Required"] = "The plan tiers are required.",
                 ["Plugins.Payments.OpenPay.Fields.ProductPageWidgetLogo"] = "Logo style",
-                ["Plugins.Payments.OpenPay.Fields.ProductPageWidgetLogo.Hint"] = "Enter the logo style of the product page widget.",
+                ["Plugins.Payments.OpenPay.Fields.ProductPageWidgetLogo.Hint"] = "Enter the logo style of the product page widget (e.g. 'grey-on-amberbg', 'grey', 'amber' or 'white').",
                 ["Plugins.Payments.OpenPay.Fields.ProductPageWidgetLogoPosition"] = "Logo position",
-                ["Plugins.Payments.OpenPay.Fields.ProductPageWidgetLogoPosition.Hint"] = "Enter the logo position of the product page widget.",
+                ["Plugins.Payments.OpenPay.Fields.ProductPageWidgetLogoPosition.Hint"] = "Enter the logo position of the product page widget (e.g. 'left' or 'right').",
                 ["Plugins.Payments.OpenPay.PaymentMethodDescription"] = "Pay by OpenPay",
                 ["Plugins.Payments.OpenPay.InvalidCurrency"] = "The primary store currency must match the currency of the country '{0}'. You must set the primary store currency to '{1}'.",
                 ["Plugins.Payments.OpenPay.DownloadOrderLimitsButton"] = "Get Min/Max limits",
@@ -365,6 +365,7 @@ namespace Nop.Plugin.Payments.OpenPay
                 ["Plugins.Payments.OpenPay.Widgets"] = "Widgets",
                 ["Plugins.Payments.OpenPay.OrderLimits"] = "Order limits",
                 ["Plugins.Payments.OpenPay.LandingPageLinkName"] = "Openpay",
+                ["Plugins.Payments.OpenPay.RedirectionTip"] = "You will be redirected to Openpay's website to complete your order.",
                 ["Plugins.Payments.OpenPay.OrderLimitsDescription"] = "Click <i>Get Min/Max limits</i> button to get the currently configured Min and Max purchase price range. This is necessary in order to not display Openpay as a payment option if the order total is not within the range. You can get the order limits only 3 times on any given calendar day. Also you can configure the background task <a href=\"{0}\" target=\"_blank\">here</a> to get the order limits periodically.",
                 ["Plugins.Payments.OpenPay.Instructions"] = @"
                     <p>
@@ -481,7 +482,7 @@ namespace Nop.Plugin.Payments.OpenPay
         /// <summary>
         /// Gets a value indicating whether we should display a payment information page for this plugin
         /// </summary>
-        public bool SkipPaymentInfo => true;
+        public bool SkipPaymentInfo => false;
 
         /// <summary>
         /// Gets a payment method description that will be displayed on checkout pages in the public store

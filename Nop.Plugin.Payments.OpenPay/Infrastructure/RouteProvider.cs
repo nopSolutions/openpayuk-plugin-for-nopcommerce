@@ -13,7 +13,7 @@ namespace Nop.Plugin.Payments.OpenPay.Infrastructure
         /// <param name="endpointRouteBuilder">Route builder</param>
         public void RegisterRoutes(IEndpointRouteBuilder endpointRouteBuilder)
         {
-            endpointRouteBuilder.MapControllerRoute(Defaults.ConfigurationRouteName, "Plugins/OpenPay/Configure",
+            endpointRouteBuilder.MapControllerRoute(Defaults.ConfigurationRouteName, "Admin/OpenPayConfiguration/Configure",
                 new { controller = "OpenPayConfiguration", action = "Configure", area = AreaNames.Admin });
 
             endpointRouteBuilder.MapControllerRoute(Defaults.SuccessfulPaymentWebhookRouteName, "Plugins/OpenPay/Successful",

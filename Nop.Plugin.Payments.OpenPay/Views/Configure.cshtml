@@ -65,142 +65,158 @@
                         <span asp-validation-for="AdditionalFeePercentage"></span>
                     </div>
                 </div>
-                <div class="panel-group">
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            @T("Plugins.Payments.OpenPay.Widgets")
-                        </div>
-                        <div class="panel-body">
-                            <div class="form-group">
-                                <div class="col-md-3">
-                                    <nop-override-store-checkbox asp-for="DisplayProductPageWidget_OverrideForStore" asp-input="DisplayProductPageWidget" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                    <nop-label asp-for="DisplayProductPageWidget" />
-                                </div>
-                                <div class="col-md-9">
-                                    <nop-editor asp-for="DisplayProductPageWidget" />
-                                    <span asp-validation-for="DisplayProductPageWidget"></span>
-                                </div>
+                @if (string.IsNullOrEmpty(Model.ApiToken))
+                {
+                    <input type="hidden" asp-for="DisplayProductPageWidget" />
+                    <input type="hidden" asp-for="ProductPageWidgetLogo" />
+                    <input type="hidden" asp-for="ProductPageWidgetLogoPosition" />
+                    <input type="hidden" asp-for="DisplayProductListingWidget" />
+                    <input type="hidden" asp-for="ProductListingWidgetLogo" />
+                    <input type="hidden" asp-for="DisplayCartWidget" />
+                    <input type="hidden" asp-for="CartWidgetLogo" />
+                    <input type="hidden" asp-for="DisplayInfoBeltWidget" />
+                    <input type="hidden" asp-for="InfoBeltWidgetColor" />
+                    <input type="hidden" asp-for="DisplayLandingPageWidget" />
+                    <input type="hidden" asp-for="PlanTiers" />
+                }
+                else
+                {
+                    <div class="panel-group">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                @T("Plugins.Payments.OpenPay.Widgets")
                             </div>
-                            <nop-nested-setting asp-for="DisplayProductPageWidget">
-                                <div id="pnlDisplayProductPageWidget">
-                                    <div class="form-group">
-                                        <div class="col-md-3">
-                                            <nop-override-store-checkbox asp-for="ProductPageWidgetLogo_OverrideForStore" asp-input="ProductPageWidgetLogo" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                            <nop-label asp-for="ProductPageWidgetLogo" />
-                                        </div>
-                                        <div class="col-md-9">
-                                            <nop-editor asp-for="ProductPageWidgetLogo" />
-                                            <span asp-validation-for="ProductPageWidgetLogo"></span>
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <div class="col-md-3">
-                                            <nop-override-store-checkbox asp-for="ProductPageWidgetLogoPosition_OverrideForStore" asp-input="ProductPageWidgetLogoPosition" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                            <nop-label asp-for="ProductPageWidgetLogoPosition" />
-                                        </div>
-                                        <div class="col-md-9">
-                                            <nop-editor asp-for="ProductPageWidgetLogoPosition" />
-                                            <span asp-validation-for="ProductPageWidgetLogoPosition"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </nop-nested-setting>
-                            <div class="form-group">
-                                <div class="col-md-3">
-                                    <nop-override-store-checkbox asp-for="DisplayProductListingWidget_OverrideForStore" asp-input="DisplayProductListingWidget" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                    <nop-label asp-for="DisplayProductListingWidget" />
-                                </div>
-                                <div class="col-md-9">
-                                    <nop-editor asp-for="DisplayProductListingWidget" />
-                                    <span asp-validation-for="DisplayProductListingWidget"></span>
-                                </div>
-                            </div>
-                            <nop-nested-setting asp-for="DisplayProductListingWidget">
-                                <div id="pnlDisplayProductListingWidget">
-                                    <div class="form-group">
-                                        <div class="col-md-3">
-                                            <nop-override-store-checkbox asp-for="ProductListingWidgetLogo_OverrideForStore" asp-input="ProductListingWidgetLogo" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                            <nop-label asp-for="ProductListingWidgetLogo" />
-                                        </div>
-                                        <div class="col-md-9">
-                                            <nop-editor asp-for="ProductListingWidgetLogo" />
-                                            <span asp-validation-for="ProductListingWidgetLogo"></span>
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <div class="col-md-3">
-                                            <nop-override-store-checkbox asp-for="ProductListingHideLogo_OverrideForStore" asp-input="ProductListingHideLogo" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                            <nop-label asp-for="ProductListingHideLogo" />
-                                        </div>
-                                        <div class="col-md-9">
-                                            <nop-editor asp-for="ProductListingHideLogo" />
-                                            <span asp-validation-for="ProductListingHideLogo"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </nop-nested-setting>
-                            <div class="form-group">
-                                <div class="col-md-3">
-                                    <nop-override-store-checkbox asp-for="DisplayCartWidget_OverrideForStore" asp-input="DisplayCartWidget" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                    <nop-label asp-for="DisplayCartWidget" />
-                                </div>
-                                <div class="col-md-9">
-                                    <nop-editor asp-for="DisplayCartWidget" />
-                                    <span asp-validation-for="DisplayCartWidget"></span>
-                                </div>
-                            </div>
-                            <nop-nested-setting asp-for="DisplayCartWidget">
-                                <div class="form-group" id="pnlCartWidgetLogo">
+                            <div class="panel-body">
+                                <div class="form-group">
                                     <div class="col-md-3">
-                                        <nop-override-store-checkbox asp-for="CartWidgetLogo_OverrideForStore" asp-input="CartWidgetLogo" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                        <nop-label asp-for="CartWidgetLogo" />
+                                        <nop-override-store-checkbox asp-for="DisplayProductPageWidget_OverrideForStore" asp-input="DisplayProductPageWidget" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="DisplayProductPageWidget" />
                                     </div>
                                     <div class="col-md-9">
-                                        <nop-editor asp-for="CartWidgetLogo" />
-                                        <span asp-validation-for="CartWidgetLogo"></span>
+                                        <nop-editor asp-for="DisplayProductPageWidget" />
+                                        <span asp-validation-for="DisplayProductPageWidget"></span>
                                     </div>
                                 </div>
-                            </nop-nested-setting>
-                            <div class="form-group">
-                                <div class="col-md-3">
-                                    <nop-override-store-checkbox asp-for="DisplayInfoBeltWidget_OverrideForStore" asp-input="DisplayInfoBeltWidget" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                    <nop-label asp-for="DisplayInfoBeltWidget" />
-                                </div>
-                                <div class="col-md-9">
-                                    <nop-editor asp-for="DisplayInfoBeltWidget" />
-                                    <span asp-validation-for="DisplayInfoBeltWidget"></span>
-                                </div>
-                            </div>
-                            <nop-nested-setting asp-for="DisplayInfoBeltWidget">
-                                <div class="form-group" id="pnlInfoBeltWidgetColor">
+                                <nop-nested-setting asp-for="DisplayProductPageWidget">
+                                    <div id="pnlDisplayProductPageWidget">
+                                        <div class="form-group">
+                                            <div class="col-md-3">
+                                                <nop-override-store-checkbox asp-for="ProductPageWidgetLogo_OverrideForStore" asp-input="ProductPageWidgetLogo" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                                <nop-label asp-for="ProductPageWidgetLogo" />
+                                            </div>
+                                            <div class="col-md-9">
+                                                <nop-editor asp-for="ProductPageWidgetLogo" />
+                                                <span asp-validation-for="ProductPageWidgetLogo"></span>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-md-3">
+                                                <nop-override-store-checkbox asp-for="ProductPageWidgetLogoPosition_OverrideForStore" asp-input="ProductPageWidgetLogoPosition" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                                <nop-label asp-for="ProductPageWidgetLogoPosition" />
+                                            </div>
+                                            <div class="col-md-9">
+                                                <nop-editor asp-for="ProductPageWidgetLogoPosition" />
+                                                <span asp-validation-for="ProductPageWidgetLogoPosition"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </nop-nested-setting>
+                                <div class="form-group">
                                     <div class="col-md-3">
-                                        <nop-override-store-checkbox asp-for="InfoBeltWidgetColor_OverrideForStore" asp-input="InfoBeltWidgetColor" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                        <nop-label asp-for="InfoBeltWidgetColor" />
+                                        <nop-override-store-checkbox asp-for="DisplayProductListingWidget_OverrideForStore" asp-input="DisplayProductListingWidget" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="DisplayProductListingWidget" />
                                     </div>
                                     <div class="col-md-9">
-                                        <nop-editor asp-for="InfoBeltWidgetColor" />
-                                        <span asp-validation-for="InfoBeltWidgetColor"></span>
+                                        <nop-editor asp-for="DisplayProductListingWidget" />
+                                        <span asp-validation-for="DisplayProductListingWidget"></span>
                                     </div>
                                 </div>
-                            </nop-nested-setting>
-                            <div class="form-group">
-                                <div class="col-md-3">
-                                    <nop-override-store-checkbox asp-for="DisplayLandingPageWidget_OverrideForStore" asp-input="DisplayLandingPageWidget" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                    <nop-label asp-for="DisplayLandingPageWidget" />
+                                <nop-nested-setting asp-for="DisplayProductListingWidget">
+                                    <div id="pnlDisplayProductListingWidget">
+                                        <div class="form-group">
+                                            <div class="col-md-3">
+                                                <nop-override-store-checkbox asp-for="ProductListingWidgetLogo_OverrideForStore" asp-input="ProductListingWidgetLogo" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                                <nop-label asp-for="ProductListingWidgetLogo" />
+                                            </div>
+                                            <div class="col-md-9">
+                                                <nop-editor asp-for="ProductListingWidgetLogo" />
+                                                <span asp-validation-for="ProductListingWidgetLogo"></span>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-md-3">
+                                                <nop-override-store-checkbox asp-for="ProductListingHideLogo_OverrideForStore" asp-input="ProductListingHideLogo" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                                <nop-label asp-for="ProductListingHideLogo" />
+                                            </div>
+                                            <div class="col-md-9">
+                                                <nop-editor asp-for="ProductListingHideLogo" />
+                                                <span asp-validation-for="ProductListingHideLogo"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </nop-nested-setting>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="DisplayCartWidget_OverrideForStore" asp-input="DisplayCartWidget" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="DisplayCartWidget" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <nop-editor asp-for="DisplayCartWidget" />
+                                        <span asp-validation-for="DisplayCartWidget"></span>
+                                    </div>
                                 </div>
-                                <div class="col-md-9">
-                                    <nop-editor asp-for="DisplayLandingPageWidget" />
-                                    <span asp-validation-for="DisplayLandingPageWidget"></span>
+                                <nop-nested-setting asp-for="DisplayCartWidget">
+                                    <div class="form-group" id="pnlCartWidgetLogo">
+                                        <div class="col-md-3">
+                                            <nop-override-store-checkbox asp-for="CartWidgetLogo_OverrideForStore" asp-input="CartWidgetLogo" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                            <nop-label asp-for="CartWidgetLogo" />
+                                        </div>
+                                        <div class="col-md-9">
+                                            <nop-editor asp-for="CartWidgetLogo" />
+                                            <span asp-validation-for="CartWidgetLogo"></span>
+                                        </div>
+                                    </div>
+                                </nop-nested-setting>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="DisplayInfoBeltWidget_OverrideForStore" asp-input="DisplayInfoBeltWidget" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="DisplayInfoBeltWidget" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <nop-editor asp-for="DisplayInfoBeltWidget" />
+                                        <span asp-validation-for="DisplayInfoBeltWidget"></span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="form-group row">
-                                <div class="col-md-3">
-                                    <nop-override-store-checkbox asp-for="PlanTiers_OverrideForStore" asp-input="PlanTiers" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                    <nop-label asp-for="PlanTiers" />
+                                <nop-nested-setting asp-for="DisplayInfoBeltWidget">
+                                    <div class="form-group" id="pnlInfoBeltWidgetColor">
+                                        <div class="col-md-3">
+                                            <nop-override-store-checkbox asp-for="InfoBeltWidgetColor_OverrideForStore" asp-input="InfoBeltWidgetColor" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                            <nop-label asp-for="InfoBeltWidgetColor" />
+                                        </div>
+                                        <div class="col-md-9">
+                                            <nop-editor asp-for="InfoBeltWidgetColor" />
+                                            <span asp-validation-for="InfoBeltWidgetColor"></span>
+                                        </div>
+                                    </div>
+                                </nop-nested-setting>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="DisplayLandingPageWidget_OverrideForStore" asp-input="DisplayLandingPageWidget" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="DisplayLandingPageWidget" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <nop-editor asp-for="DisplayLandingPageWidget" />
+                                        <span asp-validation-for="DisplayLandingPageWidget"></span>
+                                    </div>
                                 </div>
-                                <div class="col-md-9">
-                                    <nop-editor asp-for="PlanTiers" />
-                                    <script>
+                                <div class="form-group row">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="PlanTiers_OverrideForStore" asp-input="PlanTiers" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="PlanTiers" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <nop-editor asp-for="PlanTiers" />
+                                        <script>
                                         $(document).ready(function () {
                                             var availableTags = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
                                             $("#@Html.IdFor(model => model.PlanTiers)").tagEditor({
@@ -216,51 +232,52 @@
                                                 }
                                             });
                                         });
-                                    </script>
-                                    <span asp-validation-for="PlanTiers"></span>
+                                        </script>
+                                        <span asp-validation-for="PlanTiers"></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="panel-group">
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            @T("Plugins.Payments.OpenPay.OrderLimits")
-                        </div>
-                        <div class="panel-body">
-                            <p>
-                                @Html.Raw(string.Format(T("Plugins.Payments.OpenPay.OrderLimitsDescription").Text, Url.Action("Index", "ScheduleTask")))
-                                <br />
-                            </p>
-                            <div class="form-group">
-                                <div class="col-md-3">
-                                    <nop-override-store-checkbox asp-for="MinOrderTotal_OverrideForStore" asp-input="MinOrderTotal" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                    <nop-label asp-for="MinOrderTotal" />
-                                </div>
-                                <div class="col-md-9">
-                                    <input asp-for="MinOrderTotal" asp-disabled="true" class="form-control" />
-                                    <span asp-validation-for="MinOrderTotal"></span>
-                                </div>
+                    <div class="panel-group">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                @T("Plugins.Payments.OpenPay.OrderLimits")
                             </div>
-                            <div class="form-group">
-                                <div class="col-md-3">
-                                    <nop-override-store-checkbox asp-for="MaxOrderTotal_OverrideForStore" asp-input="MaxOrderTotal" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                                    <nop-label asp-for="MaxOrderTotal" />
+                            <div class="panel-body">
+                                <p>
+                                    @Html.Raw(string.Format(T("Plugins.Payments.OpenPay.OrderLimitsDescription").Text, Url.Action("Index", "ScheduleTask")))
+                                    <br />
+                                </p>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="MinOrderTotal_OverrideForStore" asp-input="MinOrderTotal" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="MinOrderTotal" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <input asp-for="MinOrderTotal" asp-disabled="true" class="form-control" />
+                                        <span asp-validation-for="MinOrderTotal"></span>
+                                    </div>
                                 </div>
-                                <div class="col-md-9">
-                                    <input asp-for="MaxOrderTotal" asp-disabled="true" class="form-control" />
-                                    <span asp-validation-for="MaxOrderTotal"></span>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        <nop-override-store-checkbox asp-for="MaxOrderTotal_OverrideForStore" asp-input="MaxOrderTotal" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                        <nop-label asp-for="MaxOrderTotal" />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <input asp-for="MaxOrderTotal" asp-disabled="true" class="form-control" />
+                                        <span asp-validation-for="MaxOrderTotal"></span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="form-group">
-                                <div class="col-md-9 col-md-offset-3">
-                                    <input type="submit" name="get-order-limits" class="btn bg-primary" value="@T("Plugins.Payments.OpenPay.DownloadOrderLimitsButton")" @(string.IsNullOrEmpty(Model.ApiToken) ? "disabled=\"disabled\"" : string.Empty) />
+                                <div class="form-group">
+                                    <div class="col-md-9 col-md-offset-3">
+                                        <input type="submit" name="get-order-limits" class="btn bg-primary" value="@T("Plugins.Payments.OpenPay.DownloadOrderLimitsButton")" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                }
                 <div class="form-group">
                     <div class="col-md-9 col-md-offset-3">
                         <input type="submit" name="save" class="btn bg-primary" value="@T("Admin.Common.Save")" />

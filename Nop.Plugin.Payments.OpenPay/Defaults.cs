@@ -44,6 +44,11 @@ namespace Nop.Plugin.Payments.OpenPay
         public const string WIDGET_VIEW_COMPONENT_NAME = "OpenPayWidget";
 
         /// <summary>
+        /// Gets a name of the view component to display the OpenPay payment information in public store
+        /// </summary>
+        public const string PAYMENT_INFO_VIEW_COMPONENT_NAME = "OpenPayPaymentInformation";
+
+        /// <summary>
         /// Gets a name of the order limits schedule task
         /// </summary>
         public static string OrderLimitsTaskName => "Order limits (OpenPay plugin)";

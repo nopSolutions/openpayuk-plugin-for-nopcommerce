@@ -100,7 +100,10 @@ namespace Nop.Plugin.Payments.OpenPay.Controllers
         {
             if (!(_paymentPluginManager.LoadPluginBySystemName(Defaults.SystemName) is OpenPayPaymentProcessor processor) || !_paymentPluginManager.IsPluginActive(processor))
                 return RedirectToAction("Index", "Home");
-            
+
+            if (!_openPayPaymentSettings.DisplayLandingPageWidget)
+                return RedirectToAction("Index", "Home");
+
             return ViewComponent(Defaults.WIDGET_VIEW_COMPONENT_NAME, new { widgetZone = "OpenPayLandingPage" });
         }
 

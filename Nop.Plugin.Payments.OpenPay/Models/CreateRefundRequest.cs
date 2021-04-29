@@ -15,6 +15,12 @@ namespace Nop.Plugin.Payments.OpenPay.Models
         [JsonProperty("fullRefund")]
         public bool FullRefund { get; set; }
 
+        /// <summary>
+        /// Gets or sets a number in the lowest denomination in the currency being used (e.g. supply 1034 to indicate $10.34) Must be zero, or greater than zero and less than the current purchase price for the order ID concerned. This will reduce the current value of a Plan by the nominated amount and helps cater for Split Order situations where the original value of the order is no longer known.
+        /// </summary>
+        [JsonProperty("reducePriceBy")]
+        public int ReducePriceBy { get; set; }
+
         #endregion
     }
 }

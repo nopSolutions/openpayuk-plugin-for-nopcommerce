@@ -160,16 +160,18 @@ namespace Nop.Plugin.Payments.OpenPay
             if (refundPaymentRequest is null)
                 throw new ArgumentNullException(nameof(refundPaymentRequest));
 
-            if (refundPaymentRequest.IsPartialRefund)
-                return new RefundPaymentResult { Errors = new[] { "Partially refund not supported" } };
-
+            var amountToRefund = refundPaymentRequest.IsPartialRefund
+                ? (decimal?)refundPaymentRequest.AmountToRefund
+                : null;
             var order = refundPaymentRequest.Order;
-            var result = _openPayService.RefundOrder(order);
+            var result = _openPayService.RefundOrder(order, amountToRefund);
             if (result.IsSuccess)
             {
                 return new RefundPaymentResult
                 {
-                    NewPaymentStatus = PaymentStatus.Refunded
+                    NewPaymentStatus = refundPaymentRequest.IsPartialRefund
+                        ? PaymentStatus.PartiallyRefunded
+                        : PaymentStatus.Refunded
                 };
             }
 
@@ -457,7 +459,7 @@ namespace Nop.Plugin.Payments.OpenPay
         /// <summary>
         /// Gets a value indicating whether partial refund is supported
         /// </summary>
-        public bool SupportPartiallyRefund => false;
+        public bool SupportPartiallyRefund => true;
 
         /// <summary>
         /// Gets a value indicating whether refund is supported

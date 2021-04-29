@@ -407,8 +407,9 @@ namespace Nop.Plugin.Payments.OpenPay.Services
         /// Returns the value indicating whether to refund was created successfully; otherwise returns the errors as <see cref="IList{string}"/>
         /// </summary>
         /// <param name="order">The order</param>
+        /// <param name="order">The amount to refund.</param>
         /// <returns>The value indicating whether to refund was created successfully; otherwise returns the errors as <see cref="IList{string}"/></returns>
-        public virtual (bool IsSuccess, IList<string> Errors) RefundOrder(Order order)
+        public virtual (bool IsSuccess, IList<string> Errors) RefundOrder(Order order, decimal? amountToRefund = null)
         {
             if (order is null)
                 throw new ArgumentNullException(nameof(order));
@@ -429,7 +430,10 @@ namespace Nop.Plugin.Payments.OpenPay.Services
             {
                 var createRefundRequest = new CreateRefundRequest
                 {
-                    FullRefund = true
+                    FullRefund = !amountToRefund.HasValue,
+                    ReducePriceBy = amountToRefund.HasValue 
+                        ? (int)(amountToRefund.Value * 100)
+                        : 0
                 };
                 var createRefundResponse = _openPayApi.CreateRefundAsync(order.CaptureTransactionId, createRefundRequest).Result;
                 if (createRefundResponse == null)

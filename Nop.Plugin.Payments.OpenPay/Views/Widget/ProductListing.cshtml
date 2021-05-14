@@ -2,4 +2,4 @@
 
 @await Html.PartialAsync("~/Plugins/Payments.OpenPay/Views/Widget/_Config.cshtml", Model)
 
-<opy-product-listing amount="@Model.Amount" logo="@Model.Logo" hide-logo="@Model.HideLogo"></opy-product-listing>
+<opy-product-listing amount="@Model.Amount" logo="@Model.Logo" hide-logo="@Model.HideLogo.ToString().ToLower()"></opy-product-listing>

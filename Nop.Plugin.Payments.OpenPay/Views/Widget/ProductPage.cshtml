@@ -4,6 +4,6 @@
 
 <script asp-location="Footer">
     $(document).ready(function () {
-        $('div.add-info + div.prices, div.overview > div.prices').after('<opy-product-page amount="@Model.Amount" logo="@Model.Logo" more-info-text"@T("Plugins.Payments.OpenPay.ProductPageWidgetMoreInfoText")"></opy-product-page>');
+        $('div.add-info + div.prices, div.overview > div.prices').after('<opy-product-page amount="@Model.Amount" logo="@Model.Logo" logo-position="@Model.LogoPosition" more-info-text="@T("Plugins.Payments.OpenPay.ProductPageWidgetMoreInfoText")"></opy-product-page>');
     });
 </script>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Nop.Plugin.Payments.OpenPay.Services;
@@ -83,7 +83,7 @@ namespace Nop.Plugin.Payments.OpenPay.Controllers
             if (!_orderProcessingService.CanMarkOrderAsPaid(order))
                 return ProduceErrorResponse(order.Id, $"Invalid processing payment after the order successfully placed on OpenPay. The order '{order.CustomOrderNumber}' already marked as paid.");
 
-            var result = _openPayService.CaptureOrder(order);
+            var result = _openPayService.CaptureOrderAsync(order).Result;
             if (string.IsNullOrEmpty(result.OrderId))
                 return ProduceErrorResponse(order.Id, string.Join("\n", result.Errors));
 

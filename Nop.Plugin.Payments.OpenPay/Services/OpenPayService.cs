@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -197,8 +198,8 @@ namespace Nop.Plugin.Payments.OpenPay.Services
         /// Places order and returns the handover URL to redirect user when order is placed successful; otherwise returns null with the errors as <see cref="IList{string}"/>
         /// </summary>
         /// <param name="order">The order</param>
-        /// <returns>The handover URL to redirect user when order is placed successful; otherwise returns null with the errors as <see cref="IList{string}"/></returns>
-        public virtual (string HandoverUrl, IList<string> Errors) PlaceOrder(Order order)
+        /// <returns>The <see cref="Task"/> containing the handover URL to redirect user when order is placed successful; otherwise returns null with the errors as <see cref="IList{string}"/></returns>
+        public virtual async Task<(string HandoverUrl, IList<string> Errors)> PlaceOrderAsync(Order order)
         {
             if (order is null)
                 throw new ArgumentNullException(nameof(order));
@@ -341,7 +342,7 @@ namespace Nop.Plugin.Payments.OpenPay.Services
 
             try
             {
-                var openPayOrder = _openPayApi.CreateOrderAsync(createOrderRequest).Result;
+                var openPayOrder = await _openPayApi.CreateOrderAsync(createOrderRequest);
                 var formPost = openPayOrder?.NextAction?.FormPost;
                 if (!string.IsNullOrEmpty(formPost?.FormPostUrl) && formPost?.FormFields?.Any() == true)
                 {
@@ -365,8 +366,8 @@ namespace Nop.Plugin.Payments.OpenPay.Services
         /// Captures order and returns the captured order id; otherwise returns null with the errors as <see cref="IList{string}"/>
         /// </summary>
         /// <param name="order">The order</param>
-        /// <returns>The captured order id; otherwise returns null with the errors as <see cref="IList{string}"/></returns>
-        public virtual (string OrderId, IList<string> Errors) CaptureOrder(Order order)
+        /// <returns>The <see cref="Task"/> containing the captured order id; otherwise returns null with the errors as <see cref="IList{string}"/></returns>
+        public virtual async Task<(string OrderId, IList<string> Errors)> CaptureOrderAsync(Order order)
         {
             if (order is null)
                 throw new ArgumentNullException(nameof(order));
@@ -379,14 +380,14 @@ namespace Nop.Plugin.Payments.OpenPay.Services
 
             try
             {
-                var orderStatus = _openPayApi.GetOrderStatusByRetailerIdAsync(order.Id.ToString()).Result;
+                var orderStatus = await _openPayApi.GetOrderStatusByRetailerIdAsync(order.Id.ToString());
                 if (orderStatus == null)
                 {
                     errors.Add($"Cannot capture payment for order {order.CustomOrderNumber}. Cannot get the OpenPay order by retailer order id '{order.Id}'.");
                     return (null, errors);
                 }
 
-                var captureResponse = _openPayApi.CaptureOrderByIdAsync(orderStatus.OrderId).Result;
+                var captureResponse = await _openPayApi.CaptureOrderByIdAsync(orderStatus.OrderId);
                 if (captureResponse == null)
                 {
                     errors.Add($"Cannot capture payment for order {order.CustomOrderNumber}.");
@@ -408,8 +409,8 @@ namespace Nop.Plugin.Payments.OpenPay.Services
         /// </summary>
         /// <param name="order">The order</param>
         /// <param name="order">The amount to refund.</param>
-        /// <returns>The value indicating whether to refund was created successfully; otherwise returns the errors as <see cref="IList{string}"/></returns>
-        public virtual (bool IsSuccess, IList<string> Errors) RefundOrder(Order order, decimal? amountToRefund = null)
+        /// <returns>The <see cref="Task"/> containing the value indicating whether to refund was created successfully; otherwise returns the errors as <see cref="IList{string}"/></returns>
+        public virtual async Task<(bool IsSuccess, IList<string> Errors)> RefundOrderAsync(Order order, decimal? amountToRefund = null)
         {
             if (order is null)
                 throw new ArgumentNullException(nameof(order));
@@ -435,7 +436,7 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                         ? (int)(amountToRefund.Value * 100)
                         : 0
                 };
-                var createRefundResponse = _openPayApi.CreateRefundAsync(order.CaptureTransactionId, createRefundRequest).Result;
+                var createRefundResponse = await _openPayApi.CreateRefundAsync(order.CaptureTransactionId, createRefundRequest);
                 if (createRefundResponse == null)
                 {
                     errors.Add($"Cannot refund the OpenPay order. Cannot create the OpenPay refund by captured order id '{order.CaptureTransactionId}'.");

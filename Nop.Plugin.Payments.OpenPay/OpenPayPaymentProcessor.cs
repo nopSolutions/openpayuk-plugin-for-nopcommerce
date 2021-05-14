@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +8,6 @@ using Nop.Core;
 using Nop.Core.Domain.Cms;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Payments;
-using Nop.Core.Domain.Tasks;
 using Nop.Plugin.Payments.OpenPay.Services;
 using Nop.Services.Cms;
 using Nop.Services.Configuration;
@@ -102,7 +101,7 @@ namespace Nop.Plugin.Payments.OpenPay
 
             var order = postProcessPaymentRequest.Order;
 
-            var result = _openPayService.PlaceOrder(order);
+            var result = _openPayService.PlaceOrderAsync(order).Result;
             if (!string.IsNullOrEmpty(result.HandoverUrl))
                 _httpContextAccessor.HttpContext.Response.Redirect(result.HandoverUrl);
             else
@@ -164,7 +163,7 @@ namespace Nop.Plugin.Payments.OpenPay
                 ? (decimal?)refundPaymentRequest.AmountToRefund
                 : null;
             var order = refundPaymentRequest.Order;
-            var result = _openPayService.RefundOrder(order, amountToRefund);
+            var result = _openPayService.RefundOrderAsync(order, amountToRefund).Result;
             if (result.IsSuccess)
             {
                 return new RefundPaymentResult

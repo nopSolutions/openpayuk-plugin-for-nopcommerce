@@ -22,6 +22,12 @@ namespace Nop.Plugin.Payments.OpenPay.Models
         public string FamilyName { get; set; }
 
         /// <summary>
+        /// Gets or sets the mobile phone number
+        /// </summary>
+        [JsonProperty("phoneNumber")]
+        public string PhoneNumber { get; set; }
+
+        /// <summary>
         /// Gets or sets the specific email addreses can be used to achieve particular effects: 
         ///     * success @openpay.co.uk Return to the caller’s website with the status SUCCESS or LODGED (depends on plan creation type)
         ///     * cancelled @openpay.co.uk Return to the caller’s website with the status CANCELLED
@@ -35,6 +41,12 @@ namespace Nop.Plugin.Payments.OpenPay.Models
         /// </summary>
         [JsonProperty("deliveryAddress")]
         public CustomerAddress DeliveryAddress { get; set; }
+
+        /// <summary>
+        /// Gets or sets the residential address
+        /// </summary>
+        [JsonProperty("residentialAddress")]
+        public CustomerAddress ResidentialAddress { get; set; }
 
         #endregion
     }

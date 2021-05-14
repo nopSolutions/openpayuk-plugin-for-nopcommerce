@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -259,6 +259,14 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                 DeliveryAddress = deliveryAddress
             };
 
+            if (!string.IsNullOrWhiteSpace(shippingAddress.PhoneNumber))
+                customerDetails.PhoneNumber = shippingAddress.PhoneNumber;
+            else if (_customerSettings.PhoneEnabled)
+            {
+                customerDetails.PhoneNumber = _genericAttributeService
+                    .GetAttribute<string>(customer, NopCustomerDefaults.PhoneAttribute);
+            }
+
             if (!order.PickupInStore && !string.IsNullOrWhiteSpace(shippingAddress.FirstName))
                 customerDetails.FirstName = shippingAddress.FirstName;
             else
@@ -275,6 +283,27 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                 customerDetails.FamilyName = _customerSettings.LastNameEnabled
                     ? _genericAttributeService.GetAttribute<string>(customer, NopCustomerDefaults.LastNameAttribute)
                     : _customerSettings.UsernamesEnabled ? customer.Username : customer.Email;
+            }
+
+            // billing address not required
+            var billingAddress = _addressService.GetAddressById(order.BillingAddressId);
+            if (billingAddress != null)
+            {
+                var billingState = _stateProvinceService.GetStateProvinceById(billingAddress.StateProvinceId.Value);
+                if (billingState != null)
+                {
+                    customerDetails.ResidentialAddress = new CustomerAddress
+                    {
+                        Line1 = billingAddress.Address1,
+                        Line2 = billingAddress.Address2,
+                        Suburb = billingAddress.City ?? billingAddress.County,
+                        PostCode = billingAddress.ZipPostalCode,
+                        State = billingState.Abbreviation
+                    };
+
+                    if (string.IsNullOrEmpty(customerDetails.PhoneNumber))
+                        customerDetails.PhoneNumber = billingAddress.PhoneNumber;
+                }
             }
 
             var currentRequestProtocol = _webHelper.CurrentRequestProtocol;

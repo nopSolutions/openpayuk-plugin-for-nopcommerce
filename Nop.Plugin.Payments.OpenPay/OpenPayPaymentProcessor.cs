@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -297,16 +297,11 @@ namespace Nop.Plugin.Payments.OpenPay
                 _settingService.SaveSetting(_widgetSettings);
             }
 
-            //install synchronization task
-            if (_scheduleTaskService.GetTaskByType(Defaults.OrderLimitsTask) == null)
+            //schedule tasks
+            foreach (var task in Defaults.ScheduleTasks)
             {
-                _scheduleTaskService.InsertTask(new ScheduleTask
-                {
-                    Enabled = true,
-                    Seconds = Defaults.DefaultOrderLimitsTaskPeriodInSeconds,
-                    Name = Defaults.OrderLimitsTaskName,
-                    Type = Defaults.OrderLimitsTask,
-                });
+                if (_scheduleTaskService.GetTaskByType(task.Type) == null)
+                    _scheduleTaskService.InsertTask(task);
             }
 
             //locales
@@ -398,9 +393,11 @@ namespace Nop.Plugin.Payments.OpenPay
             }
 
             //schedule task
-            var task = _scheduleTaskService.GetTaskByType(Defaults.OrderLimitsTask);
-            if (task != null)
-                _scheduleTaskService.DeleteTask(task);
+            foreach (var task in Defaults.ScheduleTasks)
+            {
+                if (_scheduleTaskService.GetTaskByType(task.Type) != null)
+                    _scheduleTaskService.DeleteTask(task);
+            }
 
             //locales
             _localizationService.DeletePluginLocaleResources("Plugins.Payments.OpenPay");

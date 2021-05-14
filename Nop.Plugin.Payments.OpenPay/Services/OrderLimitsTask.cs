@@ -53,7 +53,7 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                 if (!validationResult.IsValid)
                 {
                     _logger.Error($"{Defaults.SystemName}: Cannot get the order limits for the store '{store.Name}' when background task was processed.\n{string.Join("\n", validationResult.Errors)}");
-                    return;
+                    continue;
                 }
 
                 var openPayPaymentSettings = _settingService.LoadSetting<OpenPayPaymentSettings>(store.Id);

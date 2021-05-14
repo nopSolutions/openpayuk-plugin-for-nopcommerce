@@ -1,4 +1,5 @@
 ﻿using Nop.Core;
+using Nop.Core.Domain.Tasks;
 using Nop.Plugin.Payments.OpenPay.Models;
 
 namespace Nop.Plugin.Payments.OpenPay
@@ -62,6 +63,27 @@ namespace Nop.Plugin.Payments.OpenPay
         /// Gets a default period in seconds to run the order limits task
         /// </summary>
         public static int DefaultOrderLimitsTaskPeriodInSeconds => 24 * 60 * 60;
+
+        /// <summary>
+        /// Gets a plugin schedule tasks
+        /// </summary>
+        public static ScheduleTask[] ScheduleTasks => new[]
+        {
+            new ScheduleTask
+            {
+                Enabled = true,
+                Seconds = 24 * 60 * 60,
+                Name = "Order limits (OpenPay plugin)",
+                Type = "Nop.Plugin.Payments.OpenPay.Services.OrderLimitsTask",
+            },
+            new ScheduleTask
+            {
+                Enabled = true,
+                Seconds = 60 * 30,
+                Name = "Update order status (OpenPay plugin)",
+                Type = "Nop.Plugin.Payments.OpenPay.Services.UpdateOrderStatusTask",
+            }
+        };
 
         /// <summary>
         /// Represents a OpenPay defaults

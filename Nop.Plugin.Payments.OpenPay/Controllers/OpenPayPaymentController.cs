@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Nop.Plugin.Payments.OpenPay.Services;
@@ -88,7 +88,9 @@ namespace Nop.Plugin.Payments.OpenPay.Controllers
                 return ProduceErrorResponse(order.Id, string.Join("\n", result.Errors));
 
             order.CaptureTransactionId = result.OrderId;
-            _orderProcessingService.MarkOrderAsPaid(order);
+
+            if (_orderProcessingService.CanMarkOrderAsPaid(order))
+                _orderProcessingService.MarkOrderAsPaid(order);
 
             _notificationService.SuccessNotification(
                 _localizationService.GetResource("Plugins.Payments.OpenPay.SuccessfulPayment"));

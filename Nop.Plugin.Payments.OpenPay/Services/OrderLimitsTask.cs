@@ -67,8 +67,8 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                     openPayPaymentSettings.MinOrderTotal = limits.MinPrice / 100;
                     openPayPaymentSettings.MaxOrderTotal = limits.MaxPrice / 100;
 
-                    _settingService.SaveSetting(openPayPaymentSettings, x => x.MinOrderTotal, store.Id, false);
-                    _settingService.SaveSetting(openPayPaymentSettings, x => x.MaxOrderTotal, store.Id, false);
+                    _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.MinOrderTotal, stores.Count > 1, store.Id, false);
+                    _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.MaxOrderTotal, stores.Count > 1, store.Id, false);
 
                     _settingService.ClearCache();
                 }

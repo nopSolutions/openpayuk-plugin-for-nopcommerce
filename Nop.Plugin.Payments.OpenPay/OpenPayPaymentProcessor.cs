@@ -348,11 +348,11 @@ namespace Nop.Plugin.Payments.OpenPay
                 ["Plugins.Payments.OpenPay.Fields.ProductPageWidgetLogo.Hint"] = "Enter the logo style of the product page widget (e.g. 'grey-on-amberbg', 'grey', 'amber' or 'white').",
                 ["Plugins.Payments.OpenPay.Fields.ProductPageWidgetLogoPosition"] = "Logo position",
                 ["Plugins.Payments.OpenPay.Fields.ProductPageWidgetLogoPosition.Hint"] = "Enter the logo position of the product page widget (e.g. 'left' or 'right').",
-                ["Plugins.Payments.OpenPay.PaymentMethodDescription"] = "Pay by OpenPay",
+                ["Plugins.Payments.OpenPay.PaymentMethodDescription"] = "Pay by Openpay",
                 ["Plugins.Payments.OpenPay.InvalidCurrency"] = "The primary store currency must match the currency of the country '{0}'. You must set the primary store currency to '{1}'.",
                 ["Plugins.Payments.OpenPay.DownloadOrderLimitsButton"] = "Get Min/Max limits",
                 ["Plugins.Payments.OpenPay.OrderLimitsDownloaded"] = "The order limits are downloaded successfully.",
-                ["Plugins.Payments.OpenPay.FailedOrderCreation"] = "Error when calling OpenPay create order endpoint. Please try again or contact with store owner.",
+                ["Plugins.Payments.OpenPay.FailedOrderCreation"] = "Error when calling Openpay create order endpoint. Please try again or contact with store owner.",
                 ["Plugins.Payments.OpenPay.IsNotConfigured"] = "Plugin isn't configured.",
                 ["Plugins.Payments.OpenPay.SuccessfulPayment"] = "The payment was successful. Thanks you.",
                 ["Plugins.Payments.OpenPay.InvalidPayment"] = "The payment was not processed. Please try again or contact with store owner.",
@@ -365,13 +365,13 @@ namespace Nop.Plugin.Payments.OpenPay
                 ["Plugins.Payments.OpenPay.OrderLimitsDescription"] = "Click <i>Get Min/Max limits</i> button to get the currently configured Min and Max purchase price range. This is necessary in order to not display Openpay as a payment option if the order total is not within the range. You can get the order limits only 3 times on any given calendar day. Also you can configure the background task <a href=\"{0}\" target=\"_blank\">here</a> to get the order limits periodically.",
                 ["Plugins.Payments.OpenPay.Instructions"] = @"
                     <p>
-                        1. <a href=""https://www.openpay.co.uk/for-business/"" target=""_blank"">Apply for United Kingdom</a> or <a href=""https://www.openpay.com.au/business/"" target=""_blank"">Apply for Australia</a> OpenPay Merchant Account
-                        <br />2. Enter the API token provided by OpenPay
+                        1. <a href=""https://www.openpay.co.uk/for-business/"" target=""_blank"">Apply for United Kingdom</a> or <a href=""https://www.openpay.com.au/business/"" target=""_blank"">Apply for Australia</a> Openpay Merchant Account
+                        <br />2. Enter the API token provided by Openpay
                         <br />3. Choose the applicable country. Note that the primary store currency must match the currency of the country
                         <br />4. Click <i>Save</i> button
                         <br />5. Click <i>Get Min/Max limits</i> button
 	                    <br />
-                        <i>Note: The OpenPay payment method isn't available for the products that cannot be shipped.</i>
+                        <i>Note: The Openpay payment method isn't available for the products that cannot be shipped.</i>
                     </p>",
             });
 

@@ -74,6 +74,11 @@ namespace Nop.Plugin.Payments.OpenPay.Models
         /// </summary>
         public string Color { get; set; }
 
+        /// <summary>
+        /// Gets or sets the currency formatting
+        /// </summary>
+        public string CurrencyFormatting { get; set; }
+
         #endregion
     }
 }

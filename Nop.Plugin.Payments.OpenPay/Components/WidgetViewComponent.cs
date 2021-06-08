@@ -87,6 +87,7 @@ namespace Nop.Plugin.Payments.OpenPay.Components
                 WidgetCode = region.WidgetCode,
                 RegionCode = region.TwoLetterIsoCode,
                 CurrencyCode = _workContext.WorkingCurrency.CurrencyCode,
+                CurrencyFormatting = _workContext.WorkingCurrency.CustomFormatting,
                 PlanTiers = _openPayPaymentSettings.PlanTiers.Split(',').Select(x => int.Parse(x)).ToArray(),
                 MinEligibleAmount = ToWorkingCurrency(_openPayPaymentSettings.MinOrderTotal),
                 MaxEligibleAmount = ToWorkingCurrency(_openPayPaymentSettings.MaxOrderTotal),

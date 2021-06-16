@@ -1,19 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Nop.Core.Domain.Payments;
 using Nop.Services.Configuration;
 using Nop.Services.Logging;
 using Nop.Services.Orders;
 using Nop.Services.Stores;
-using Nop.Services.Tasks;
+using Scheduling = Nop.Services.Tasks;
 
 namespace Nop.Plugin.Payments.OpenPay.Services
 {
     /// <summary>
     /// Represents a schedule task to update the order status
     /// </summary>
-    public class UpdateOrderStatusTask : IScheduleTask
+    public class UpdateOrderStatusTask : Scheduling.IScheduleTask
     {
         #region Fields
 
@@ -54,43 +55,44 @@ namespace Nop.Plugin.Payments.OpenPay.Services
         /// <summary>
         /// Execute task
         /// </summary>
-        public void Execute()
+        /// <returns>The <see cref="Task"/></returns>
+        public async Task ExecuteAsync()
         {
-            var stores = _storeService.GetAllStores();
+            var stores = await _storeService.GetAllStoresAsync();
             foreach (var store in stores)
             {
-                var validationResult = _openPayService.Validate(store.Id);
+                var validationResult = await _openPayService.ValidateAsync(store.Id);
                 if (!validationResult.IsValid)
                 {
-                    _logger.Error($"{Defaults.SystemName}: Cannot update the status of the orders in the store '{store.Name}' when background task was processed.\n{string.Join("\n", validationResult.Errors)}");
+                    await _logger.ErrorAsync($"{Defaults.SystemName}: Cannot update the status of the orders in the store '{store.Name}' when background task was processed.{Environment.NewLine}{string.Join(Environment.NewLine, validationResult.Errors)}");
                     continue;
                 }
 
                 // get all non-paid orders including previous month 
-                var orders = _orderService.SearchOrders(
+                var orders = (await _orderService.SearchOrdersAsync(
                     storeId: store.Id,
                     createdFromUtc: DateTime.UtcNow.AddMonths(-1),
                     psIds: new List<int>
                     {
                         (int)PaymentStatus.Pending,
                         (int)PaymentStatus.Authorized
-                    })?.Where(o => o.PaymentMethodSystemName == Defaults.SystemName);
+                    }))?.Where(o => o.PaymentMethodSystemName == Defaults.SystemName);
                 
                 if (orders?.Any() == true)
                 {
-                    var openPayPaymentSettings = _settingService.LoadSetting<OpenPayPaymentSettings>(store.Id);
+                    var openPayPaymentSettings = await _settingService.LoadSettingAsync<OpenPayPaymentSettings>(store.Id);
 
                     _openPayApi.ConfigureClient(openPayPaymentSettings);
 
                     foreach (var order in orders)
                     {
-                        var result = _openPayService.CaptureOrderAsync(order).Result;
+                        var result = await _openPayService.CaptureOrderAsync(order);
                         if (string.IsNullOrEmpty(result.OrderId))
-                            _logger.Error($"{Defaults.SystemName}: Cannot update the status of the order '{order.CustomOrderNumber}' in the store '{store.Name}' when background task was processed.\n{string.Join("\n", result.Errors)}");
+                            await _logger.ErrorAsync($"{Defaults.SystemName}: Cannot update the status of the order '{order.CustomOrderNumber}' in the store '{store.Name}' when background task was processed.{Environment.NewLine}{string.Join(Environment.NewLine, result.Errors)}");
                         else if (_orderProcessingService.CanMarkOrderAsPaid(order))
                         {
                             order.CaptureTransactionId = result.OrderId;
-                            _orderProcessingService.MarkOrderAsPaid(order);
+                            await _orderProcessingService.MarkOrderAsPaidAsync(order);
                         }
                     }
                 }

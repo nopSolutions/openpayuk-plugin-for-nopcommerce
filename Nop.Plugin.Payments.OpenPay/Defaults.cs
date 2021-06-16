@@ -147,7 +147,7 @@ namespace Nop.Plugin.Payments.OpenPay
                 /// <summary>
                 /// Gets the user agent
                 /// </summary>
-                public static string UserAgent => $"nopCommerce-{NopVersion.CurrentVersion}";
+                public static string UserAgent => $"nopCommerce-{NopVersion.FULL_VERSION}";
 
                 /// <summary>
                 /// Gets the default timeout

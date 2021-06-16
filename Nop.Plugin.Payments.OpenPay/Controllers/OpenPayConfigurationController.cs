@@ -68,14 +68,14 @@ namespace Nop.Plugin.Payments.OpenPay.Controllers
 
         #region Methods
 
-        public IActionResult Configure()
+        public async Task<IActionResult> Configure()
         {
-            if (!_permissionService.Authorize(StandardPermissionProvider.ManagePaymentMethods))
+            if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePaymentMethods))
                 return AccessDeniedView();
 
             //load settings for a chosen store scope
-            var storeScope = _storeContext.ActiveStoreScopeConfiguration;
-            var openPayPaymentSettings = _settingService.LoadSetting<OpenPayPaymentSettings>(storeScope);
+            var storeScope = await _storeContext.GetActiveStoreScopeConfigurationAsync();
+            var openPayPaymentSettings = await _settingService.LoadSettingAsync<OpenPayPaymentSettings>(storeScope);
 
             var model = new ConfigurationModel
             {
@@ -107,61 +107,61 @@ namespace Nop.Plugin.Payments.OpenPay.Controllers
 
             foreach (var countryCode in availableCountryCodes)
             {
-                var country = _countryService.GetCountryByTwoLetterIsoCode(countryCode);
+                var country = await _countryService.GetCountryByTwoLetterIsoCodeAsync(countryCode);
                 if (country != null)
                     model.AvailableRegions.Add(new SelectListItem(country.Name, country.TwoLetterIsoCode));
             }
 
             if (storeScope > 0)
             {
-                model.UseSandbox_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.UseSandbox, storeScope);
-                model.ApiToken_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.ApiToken, storeScope);
-                model.RegionTwoLetterIsoCode_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.RegionTwoLetterIsoCode, storeScope);
-                model.MinOrderTotal_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.MinOrderTotal, storeScope);
-                model.MaxOrderTotal_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.MaxOrderTotal, storeScope);
-                model.AdditionalFee_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.AdditionalFee, storeScope);
-                model.AdditionalFeePercentage_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.AdditionalFeePercentage, storeScope);
-                model.DisplayProductListingWidget_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.DisplayProductListingWidget, storeScope);
-                model.DisplayCartWidget_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.DisplayCartWidget, storeScope);
-                model.CartWidgetLogo_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.CartWidgetLogo, storeScope);
-                model.DisplayProductPageWidget_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.DisplayProductPageWidget, storeScope);
-                model.DisplayInfoBeltWidget_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.DisplayInfoBeltWidget, storeScope);
-                model.DisplayLandingPageWidget_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.DisplayLandingPageWidget, storeScope);
-                model.PlanTiers_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.PlanTiers, storeScope);
-                model.InfoBeltWidgetColor_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.InfoBeltWidgetColor, storeScope);
-                model.ProductListingWidgetLogo_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.PlanTiers, storeScope);
-                model.ProductListingHideLogo_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.PlanTiers, storeScope);
-                model.ProductPageWidgetLogo_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.ProductPageWidgetLogo, storeScope);
-                model.ProductPageWidgetLogoPosition_OverrideForStore = _settingService.SettingExists(openPayPaymentSettings, x => x.ProductPageWidgetLogoPosition, storeScope);
+                model.UseSandbox_OverrideForStore = await _settingService.SettingExistsAsync(openPayPaymentSettings, x => x.UseSandbox, storeScope);
+                model.ApiToken_OverrideForStore = await _settingService.SettingExistsAsync(openPayPaymentSettings, x => x.ApiToken, storeScope);
+                model.RegionTwoLetterIsoCode_OverrideForStore = await _settingService.SettingExistsAsync(openPayPaymentSettings, x => x.RegionTwoLetterIsoCode, storeScope);
+                model.MinOrderTotal_OverrideForStore = await _settingService.SettingExistsAsync(openPayPaymentSettings, x => x.MinOrderTotal, storeScope);
+                model.MaxOrderTotal_OverrideForStore = await _settingService.SettingExistsAsync(openPayPaymentSettings, x => x.MaxOrderTotal, storeScope);
+                model.AdditionalFee_OverrideForStore = await _settingService.SettingExistsAsync(openPayPaymentSettings, x => x.AdditionalFee, storeScope);
+                model.AdditionalFeePercentage_OverrideForStore = await _settingService.SettingExistsAsync(openPayPaymentSettings, x => x.AdditionalFeePercentage, storeScope);
+                model.DisplayProductListingWidget_OverrideForStore = await _settingService.SettingExistsAsync(openPayPaymentSettings, x => x.DisplayProductListingWidget, storeScope);
+                model.DisplayCartWidget_OverrideForStore = await _settingService.SettingExistsAsync(openPayPaymentSettings, x => x.DisplayCartWidget, storeScope);
+                model.CartWidgetLogo_OverrideForStore = await _settingService.SettingExistsAsync(openPayPaymentSettings, x => x.CartWidgetLogo, storeScope);
+                model.DisplayProductPageWidget_OverrideForStore = await _settingService.SettingExistsAsync(openPayPaymentSettings, x => x.DisplayProductPageWidget, storeScope);
+                model.DisplayInfoBeltWidget_OverrideForStore = await _settingService.SettingExistsAsync(openPayPaymentSettings, x => x.DisplayInfoBeltWidget, storeScope);
+                model.DisplayLandingPageWidget_OverrideForStore = await _settingService.SettingExistsAsync(openPayPaymentSettings, x => x.DisplayLandingPageWidget, storeScope);
+                model.PlanTiers_OverrideForStore = await _settingService.SettingExistsAsync(openPayPaymentSettings, x => x.PlanTiers, storeScope);
+                model.InfoBeltWidgetColor_OverrideForStore = await _settingService.SettingExistsAsync(openPayPaymentSettings, x => x.InfoBeltWidgetColor, storeScope);
+                model.ProductListingWidgetLogo_OverrideForStore = await _settingService.SettingExistsAsync(openPayPaymentSettings, x => x.PlanTiers, storeScope);
+                model.ProductListingHideLogo_OverrideForStore = await _settingService.SettingExistsAsync(openPayPaymentSettings, x => x.PlanTiers, storeScope);
+                model.ProductPageWidgetLogo_OverrideForStore = await _settingService.SettingExistsAsync(openPayPaymentSettings, x => x.ProductPageWidgetLogo, storeScope);
+                model.ProductPageWidgetLogoPosition_OverrideForStore = await _settingService.SettingExistsAsync(openPayPaymentSettings, x => x.ProductPageWidgetLogoPosition, storeScope);
             }
 
             return View("~/Plugins/Payments.OpenPay/Views/Configure.cshtml", model);
         }
 
         [HttpPost]
-        public IActionResult Configure(ConfigurationModel model)
+        public async Task<IActionResult> Configure(ConfigurationModel model)
         {
-            if (!_permissionService.Authorize(StandardPermissionProvider.ManagePaymentMethods))
+            if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePaymentMethods))
                 return AccessDeniedView();
 
             if (!ModelState.IsValid)
-                return Configure();
+                return await Configure();
 
             // primary store currency must match the currency of the selected country
             var selectedRegion = Defaults.OpenPay.AvailableRegions
                 .FirstOrDefault(region => region.TwoLetterIsoCode == model.RegionTwoLetterIsoCode);
 
-            var primaryStoreCurrency = _currencyService.GetCurrencyById(_currencySettings.PrimaryStoreCurrencyId);
+            var primaryStoreCurrency = await _currencyService.GetCurrencyByIdAsync(_currencySettings.PrimaryStoreCurrencyId);
             if (primaryStoreCurrency.CurrencyCode != selectedRegion.CurrencyCode)
             {
-                var invalidCurrencyLocale = _localizationService.GetResource("Plugins.Payments.OpenPay.InvalidCurrency");
+                var invalidCurrencyLocale = await _localizationService.GetResourceAsync("Plugins.Payments.OpenPay.InvalidCurrency");
                 var invalidCurrencyMessage = string.Format(invalidCurrencyLocale, selectedRegion.TwoLetterIsoCode, selectedRegion.CurrencyCode);
                 _notificationService.WarningNotification(invalidCurrencyMessage);
             }
 
             //load settings for a chosen store scope
-            var storeScope = _storeContext.ActiveStoreScopeConfiguration;
-            var openPayPaymentSettings = _settingService.LoadSetting<OpenPayPaymentSettings>(storeScope);
+            var storeScope = await _storeContext.GetActiveStoreScopeConfigurationAsync();
+            var openPayPaymentSettings = await _settingService.LoadSettingAsync<OpenPayPaymentSettings>(storeScope);
 
             //sort plan tiers
             var convertedPlanTiers = model.PlanTiers.Split(',').Select(x => int.Parse(x)).ToArray();
@@ -189,28 +189,28 @@ namespace Nop.Plugin.Payments.OpenPay.Controllers
             /* We do not clear cache after each setting update.
              * This behavior can increase performance because cached settings will not be cleared 
              * and loaded from database after each update */
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.UseSandbox, model.UseSandbox_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.ApiToken, model.ApiToken_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.RegionTwoLetterIsoCode, model.RegionTwoLetterIsoCode_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.AdditionalFee, model.AdditionalFee_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.AdditionalFeePercentage, model.AdditionalFeePercentage_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.DisplayProductListingWidget, model.DisplayProductListingWidget_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.DisplayCartWidget, model.DisplayCartWidget_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.CartWidgetLogo, model.CartWidgetLogo_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.DisplayProductPageWidget, model.DisplayProductPageWidget_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.DisplayInfoBeltWidget, model.DisplayInfoBeltWidget_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.DisplayLandingPageWidget, model.DisplayLandingPageWidget_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.PlanTiers, model.PlanTiers_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.InfoBeltWidgetColor, model.InfoBeltWidgetColor_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.ProductListingWidgetLogo, model.ProductListingWidgetLogo_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.ProductListingHideLogo, model.ProductListingHideLogo_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.ProductPageWidgetLogo, model.ProductPageWidgetLogo_OverrideForStore, storeScope, false);
-            _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.ProductPageWidgetLogoPosition, model.ProductPageWidgetLogoPosition_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.UseSandbox, model.UseSandbox_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.ApiToken, model.ApiToken_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.RegionTwoLetterIsoCode, model.RegionTwoLetterIsoCode_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.AdditionalFee, model.AdditionalFee_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.AdditionalFeePercentage, model.AdditionalFeePercentage_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.DisplayProductListingWidget, model.DisplayProductListingWidget_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.DisplayCartWidget, model.DisplayCartWidget_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.CartWidgetLogo, model.CartWidgetLogo_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.DisplayProductPageWidget, model.DisplayProductPageWidget_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.DisplayInfoBeltWidget, model.DisplayInfoBeltWidget_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.DisplayLandingPageWidget, model.DisplayLandingPageWidget_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.PlanTiers, model.PlanTiers_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.InfoBeltWidgetColor, model.InfoBeltWidgetColor_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.ProductListingWidgetLogo, model.ProductListingWidgetLogo_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.ProductListingHideLogo, model.ProductListingHideLogo_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.ProductPageWidgetLogo, model.ProductPageWidgetLogo_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.ProductPageWidgetLogoPosition, model.ProductPageWidgetLogoPosition_OverrideForStore, storeScope, false);
 
             //now clear settings cache
-            _settingService.ClearCache();
+            await _settingService.ClearCacheAsync();
 
-            _notificationService.SuccessNotification(_localizationService.GetResource("Admin.Plugins.Saved"));
+            _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Plugins.Saved"));
 
             return RedirectToAction("Configure");
         }
@@ -220,13 +220,13 @@ namespace Nop.Plugin.Payments.OpenPay.Controllers
         public async Task<IActionResult> GetOrderLimits(ConfigurationModel model)
         {
             if (!ModelState.IsValid)
-                return Configure();
+                return await Configure();
 
             try
             {
                 //load settings for a chosen store scope
-                var storeScope = _storeContext.ActiveStoreScopeConfiguration;
-                var openPayPaymentSettings = _settingService.LoadSetting<OpenPayPaymentSettings>(storeScope);
+                var storeScope = await _storeContext.GetActiveStoreScopeConfigurationAsync();
+                var openPayPaymentSettings = await _settingService.LoadSettingAsync<OpenPayPaymentSettings>(storeScope);
 
                 _openPayApi.ConfigureClient(openPayPaymentSettings);
 
@@ -235,13 +235,13 @@ namespace Nop.Plugin.Payments.OpenPay.Controllers
                 openPayPaymentSettings.MinOrderTotal = limits.MinPrice / 100;
                 openPayPaymentSettings.MaxOrderTotal = limits.MaxPrice / 100;
 
-                _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.MinOrderTotal, model.MinOrderTotal_OverrideForStore, storeScope, false);
-                _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.MaxOrderTotal, model.MaxOrderTotal_OverrideForStore, storeScope, false);
+                await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.MinOrderTotal, model.MinOrderTotal_OverrideForStore, storeScope, false);
+                await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.MaxOrderTotal, model.MaxOrderTotal_OverrideForStore, storeScope, false);
 
                 //now clear settings cache
-                _settingService.ClearCache();
+                await _settingService.ClearCacheAsync();
 
-                _notificationService.SuccessNotification(_localizationService.GetResource("Plugins.Payments.OpenPay.OrderLimitsDownloaded"));
+                _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Plugins.Payments.OpenPay.OrderLimitsDownloaded"));
             }
             catch (ApiException ex)
             {

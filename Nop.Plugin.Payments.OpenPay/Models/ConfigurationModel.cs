@@ -9,7 +9,7 @@ namespace Nop.Plugin.Payments.OpenPay.Models
     /// <summary>
     /// Represents a configuration model
     /// </summary>
-    public class ConfigurationModel : BaseNopModel
+    public record ConfigurationModel : BaseNopModel
     {
         #region Properties
 

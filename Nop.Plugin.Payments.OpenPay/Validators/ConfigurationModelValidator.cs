@@ -16,15 +16,15 @@ namespace Nop.Plugin.Payments.OpenPay.Validators
         {
             RuleFor(model => model.ApiToken)
                 .NotEmpty()
-                .WithMessage(localizationService.GetResource("Plugins.Payments.OpenPay.Fields.ApiToken.Required"));
+                .WithMessageAwait(localizationService.GetResourceAsync("Plugins.Payments.OpenPay.Fields.ApiToken.Required"));
 
             RuleFor(model => model.RegionTwoLetterIsoCode)
                 .NotEmpty()
-                .WithMessage(localizationService.GetResource("Plugins.Payments.OpenPay.Fields.RegionTwoLetterIsoCode.Required"));
+                .WithMessageAwait(localizationService.GetResourceAsync("Plugins.Payments.OpenPay.Fields.RegionTwoLetterIsoCode.Required"));
 
             RuleFor(model => model.PlanTiers)
                 .NotEmpty()
-                .WithMessage(localizationService.GetResource("Plugins.Payments.OpenPay.Fields.PlanTiers.Required"));
+                .WithMessageAwait(localizationService.GetResourceAsync("Plugins.Payments.OpenPay.Fields.PlanTiers.Required"));
         }
 
         #endregion

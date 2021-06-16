@@ -5,7 +5,7 @@ namespace Nop.Plugin.Payments.OpenPay.Models
     /// <summary>
     /// Represents a widget model
     /// </summary>
-    public class WidgetModel : BaseNopModel
+    public record WidgetModel : BaseNopModel
     {
         #region Properties
 

@@ -1,15 +1,17 @@
-﻿using Nop.Plugin.Payments.OpenPay.Models;
+﻿using System;
+using System.Threading.Tasks;
+using Nop.Plugin.Payments.OpenPay.Models;
 using Nop.Services.Configuration;
 using Nop.Services.Logging;
 using Nop.Services.Stores;
-using Nop.Services.Tasks;
+using Scheduling = Nop.Services.Tasks;
 
 namespace Nop.Plugin.Payments.OpenPay.Services
 {
     /// <summary>
     /// Represents a schedule task to get the order limits
     /// </summary>
-    public class OrderLimitsTask : IScheduleTask
+    public class OrderLimitsTask : Scheduling.IScheduleTask
     {
         #region Fields
 
@@ -44,37 +46,38 @@ namespace Nop.Plugin.Payments.OpenPay.Services
         /// <summary>
         /// Execute task
         /// </summary>
-        public void Execute()
+        /// <returns>The <see cref="Task"/></returns>
+        public async Task ExecuteAsync()
         {
-            var stores = _storeService.GetAllStores();
+            var stores = await _storeService.GetAllStoresAsync();
             foreach (var store in stores)
             {
-                var validationResult = _openPayService.Validate(store.Id);
+                var validationResult = await _openPayService.ValidateAsync(store.Id);
                 if (!validationResult.IsValid)
                 {
-                    _logger.Error($"{Defaults.SystemName}: Cannot get the order limits for the store '{store.Name}' when background task was processed.\n{string.Join("\n", validationResult.Errors)}");
+                    await _logger.ErrorAsync($"{Defaults.SystemName}: Cannot get the order limits for the store '{store.Name}' when background task was processed.{Environment.NewLine}{string.Join(Environment.NewLine, validationResult.Errors)}");
                     continue;
                 }
 
-                var openPayPaymentSettings = _settingService.LoadSetting<OpenPayPaymentSettings>(store.Id);
+                var openPayPaymentSettings = await _settingService.LoadSettingAsync<OpenPayPaymentSettings>(store.Id);
 
                 _openPayApi.ConfigureClient(openPayPaymentSettings);
 
                 try
                 {
-                    var limits = _openPayApi.GetOrderLimitsAsync().Result;
+                    var limits = await _openPayApi.GetOrderLimitsAsync();
 
                     openPayPaymentSettings.MinOrderTotal = limits.MinPrice / 100;
                     openPayPaymentSettings.MaxOrderTotal = limits.MaxPrice / 100;
 
-                    _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.MinOrderTotal, stores.Count > 1, store.Id, false);
-                    _settingService.SaveSettingOverridablePerStore(openPayPaymentSettings, x => x.MaxOrderTotal, stores.Count > 1, store.Id, false);
+                    await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.MinOrderTotal, stores.Count > 1, store.Id, false);
+                    await _settingService.SaveSettingOverridablePerStoreAsync(openPayPaymentSettings, x => x.MaxOrderTotal, stores.Count > 1, store.Id, false);
 
-                    _settingService.ClearCache();
+                    await _settingService.ClearCacheAsync();
                 }
                 catch (ApiException ex)
                 {
-                    _logger.Error($"{Defaults.SystemName}: Cannot get the order limits for the store '{store.Name}' when background task was processed.", ex);
+                    await _logger.ErrorAsync($"{Defaults.SystemName}: Cannot get the order limits for the store '{store.Name}' when background task was processed.", ex);
                 }
             }
         }

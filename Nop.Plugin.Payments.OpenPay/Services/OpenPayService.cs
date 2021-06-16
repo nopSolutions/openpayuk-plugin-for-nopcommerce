@@ -100,8 +100,8 @@ namespace Nop.Plugin.Payments.OpenPay.Services
         /// Returns the errors as <see cref="IList{string}"/> if plugin isn't configured; otherwise empty
         /// </summary>
         /// <param name="storeId">The store id, pass null to use id of the current store</param>
-        /// <returns>The errors as <see cref="IList{string}"/> if plugin isn't configured; otherwise empty</returns>
-        public virtual (bool IsValid, IList<string> Errors) Validate(int? storeId = null)
+        /// <returns>The <see cref="Task"/> containing the errors as <see cref="IList{string}"/> if plugin isn't configured; otherwise empty</returns>
+        public virtual async Task<(bool IsValid, IList<string> Errors)> ValidateAsync(int? storeId = null)
         {
             OpenPayPaymentSettings openPayPaymentSettings = null;
 
@@ -110,14 +110,14 @@ namespace Nop.Plugin.Payments.OpenPay.Services
             else
             {
                 // load settings for specified store
-                openPayPaymentSettings = _settingService.LoadSetting<OpenPayPaymentSettings>(storeId.Value);
+                openPayPaymentSettings = await _settingService.LoadSettingAsync<OpenPayPaymentSettings>(storeId.Value);
             }
 
             var errors = new List<string>();
 
             // resolve validator here to exclude warnings after installation process
             var validator = EngineContext.Current.Resolve<IValidator<ConfigurationModel>>();
-            var validationResult = validator.Validate(new ConfigurationModel
+            var validationResult = await validator.ValidateAsync(new ConfigurationModel
             {
                 ApiToken = openPayPaymentSettings.ApiToken,
                 RegionTwoLetterIsoCode = openPayPaymentSettings.RegionTwoLetterIsoCode,
@@ -134,10 +134,10 @@ namespace Nop.Plugin.Payments.OpenPay.Services
             var region = Defaults.OpenPay.AvailableRegions.FirstOrDefault(
                 region => region.IsSandbox == openPayPaymentSettings.UseSandbox && region.TwoLetterIsoCode == openPayPaymentSettings.RegionTwoLetterIsoCode);
 
-            var primaryStoreCurrency = _currencyService.GetCurrencyById(_currencySettings.PrimaryStoreCurrencyId);
+            var primaryStoreCurrency = await _currencyService.GetCurrencyByIdAsync(_currencySettings.PrimaryStoreCurrencyId);
             if (primaryStoreCurrency.CurrencyCode != region.CurrencyCode)
             {
-                var invalidCurrencyLocale = _localizationService.GetResource("Plugins.Payments.OpenPay.InvalidCurrency");
+                var invalidCurrencyLocale = await _localizationService.GetResourceAsync("Plugins.Payments.OpenPay.InvalidCurrency");
                 var invalidCurrencyMessage = string.Format(invalidCurrencyLocale, region.TwoLetterIsoCode, region.CurrencyCode);
                 errors.Add(invalidCurrencyLocale);
 
@@ -151,29 +151,33 @@ namespace Nop.Plugin.Payments.OpenPay.Services
         /// Returns the value indicating whether to payment method can be displayed in checkout
         /// </summary>
         /// <param name="cart">The shopping cart</param>
-        /// <returns>The value indicating whether to payment method can be displayed in checkout</returns>
-        public virtual bool CanDisplayPaymentMethod(IList<ShoppingCartItem> cart)
+        /// <returns>The <see cref="Task"/> containing the value indicating whether to payment method can be displayed in checkout</returns>
+        public virtual async Task<bool> CanDisplayPaymentMethodAsync(IList<ShoppingCartItem> cart)
         {
             if (cart is null)
                 throw new ArgumentNullException(nameof(cart));
 
-            if (!Validate().IsValid)
+            if (!(await ValidateAsync()).IsValid)
                 return false;   
 
             if (_openPayPaymentSettings.MinOrderTotal == 0 || _openPayPaymentSettings.MaxOrderTotal == 0)
                 return false;
 
-            var cartTotal = _orderTotalCalculationService.GetShoppingCartTotal(cart);
-            if (!cartTotal.HasValue)
+            var shoppingCartTotal = decimal.Zero;
+
+            var cartTotal = await _orderTotalCalculationService.GetShoppingCartTotalAsync(cart);
+            if (cartTotal.shoppingCartTotal.HasValue)
+                shoppingCartTotal = cartTotal.shoppingCartTotal.Value;
+            else
             {
-                _orderTotalCalculationService.GetShoppingCartSubTotal(cart, true, out _, out _, out _, out var subTotalWithDiscount);
-                cartTotal = subTotalWithDiscount;
+                var cartSubTotal = await _orderTotalCalculationService.GetShoppingCartSubTotalAsync(cart, true);
+                shoppingCartTotal = cartSubTotal.subTotalWithDiscount;
             }
 
-            if (cartTotal < _openPayPaymentSettings.MinOrderTotal || cartTotal > _openPayPaymentSettings.MaxOrderTotal)
+            if (shoppingCartTotal < _openPayPaymentSettings.MinOrderTotal || shoppingCartTotal > _openPayPaymentSettings.MaxOrderTotal)
                 return false;
 
-            if (!_shoppingCartService.ShoppingCartRequiresShipping(cart))
+            if (!await _shoppingCartService.ShoppingCartRequiresShippingAsync(cart))
                 return false;
 
             return true;
@@ -182,10 +186,10 @@ namespace Nop.Plugin.Payments.OpenPay.Services
         /// <summary>
         /// Returns the value indicating whether to widget can be displayed in public
         /// </summary>
-        /// <returns>The value indicating whether to widget can be displayed in public</returns>
-        public virtual bool CanDisplayWidget()
+        /// <returns>The <see cref="Task"/> containing the value indicating whether to widget can be displayed in public</returns>
+        public virtual async Task<bool> CanDisplayWidgetAsync()
         {
-            if (!Validate().IsValid)
+            if (!(await ValidateAsync()).IsValid)
                 return false;
 
             if (_openPayPaymentSettings.MinOrderTotal == 0 || _openPayPaymentSettings.MaxOrderTotal == 0)
@@ -204,7 +208,7 @@ namespace Nop.Plugin.Payments.OpenPay.Services
             if (order is null)
                 throw new ArgumentNullException(nameof(order));
 
-            var validationResult = Validate();
+            var validationResult = await ValidateAsync();
             if (!validationResult.IsValid)
                 return (null, validationResult.Errors);
 
@@ -217,7 +221,7 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                 return (null, errors);
             }
 
-            var shippingAddress = _addressService.GetAddressById(shippingAddressId.Value);
+            var shippingAddress = await _addressService.GetAddressByIdAsync(shippingAddressId.Value);
             if (shippingAddress == null)
             {
                 errors.Add($"Cannot process payment for order {order.CustomOrderNumber}. The shipping address not found.");
@@ -230,7 +234,7 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                 return (null, errors);
             }
 
-            var shippingState = _stateProvinceService.GetStateProvinceById(shippingAddress.StateProvinceId.Value);
+            var shippingState = await _stateProvinceService.GetStateProvinceByIdAsync(shippingAddress.StateProvinceId.Value);
             if (shippingState == null)
             {
                 errors.Add($"Cannot process payment for order {order.CustomOrderNumber}. The state not found.");
@@ -246,7 +250,7 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                 State = shippingState.Abbreviation
             };
 
-            var customer = _customerService.GetCustomerById(order.CustomerId);
+            var customer = await _customerService.GetCustomerByIdAsync(order.CustomerId);
             if (customer == null)
             {
                 errors.Add($"Cannot process payment for order {order.CustomOrderNumber}. The customer not found.");
@@ -263,8 +267,8 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                 customerDetails.PhoneNumber = shippingAddress.PhoneNumber;
             else if (_customerSettings.PhoneEnabled)
             {
-                customerDetails.PhoneNumber = _genericAttributeService
-                    .GetAttribute<string>(customer, NopCustomerDefaults.PhoneAttribute);
+                customerDetails.PhoneNumber = await _genericAttributeService
+                    .GetAttributeAsync<string>(customer, NopCustomerDefaults.PhoneAttribute);
             }
 
             if (!order.PickupInStore && !string.IsNullOrWhiteSpace(shippingAddress.FirstName))
@@ -272,7 +276,7 @@ namespace Nop.Plugin.Payments.OpenPay.Services
             else
             {
                 customerDetails.FirstName = _customerSettings.FirstNameEnabled
-                    ? _genericAttributeService.GetAttribute<string>(customer, NopCustomerDefaults.FirstNameAttribute)
+                    ? await _genericAttributeService.GetAttributeAsync<string>(customer, NopCustomerDefaults.FirstNameAttribute)
                     : _customerSettings.UsernamesEnabled ? customer.Username : customer.Email;
             }
 
@@ -281,15 +285,15 @@ namespace Nop.Plugin.Payments.OpenPay.Services
             else
             {
                 customerDetails.FamilyName = _customerSettings.LastNameEnabled
-                    ? _genericAttributeService.GetAttribute<string>(customer, NopCustomerDefaults.LastNameAttribute)
+                    ? await _genericAttributeService.GetAttributeAsync<string>(customer, NopCustomerDefaults.LastNameAttribute)
                     : _customerSettings.UsernamesEnabled ? customer.Username : customer.Email;
             }
 
             // billing address not required
-            var billingAddress = _addressService.GetAddressById(order.BillingAddressId);
+            var billingAddress = await _addressService.GetAddressByIdAsync(order.BillingAddressId);
             if (billingAddress != null)
             {
-                var billingState = _stateProvinceService.GetStateProvinceById(billingAddress.StateProvinceId.Value);
+                var billingState = await _stateProvinceService.GetStateProvinceByIdAsync(billingAddress.StateProvinceId.Value);
                 if (billingState != null)
                 {
                     customerDetails.ResidentialAddress = new CustomerAddress
@@ -306,7 +310,7 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                 }
             }
 
-            var currentRequestProtocol = _webHelper.CurrentRequestProtocol;
+            var currentRequestProtocol = _webHelper.GetCurrentRequestProtocol();
             var urlHelper = _urlHelperFactory.GetUrlHelper(_actionContextAccessor.ActionContext);
             var callbackUrl = urlHelper.RouteUrl(Defaults.SuccessfulPaymentWebhookRouteName, null, currentRequestProtocol);
             var failUrl = urlHelper.RouteUrl(Defaults.OrderDetailsRouteName, new { orderId = order.Id }, currentRequestProtocol);
@@ -332,13 +336,13 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                 RetailerOrderNo = order.Id.ToString()
             };
 
-            var orderItems = _orderService.GetOrderItems(order.Id);
+            var orderItems = await _orderService.GetOrderItemsAsync(order.Id);
             if (orderItems?.Any() == true)
             {
                 var cartItems = new List<CartItem>();
                 foreach (var item in orderItems)
                 {
-                    var product = _productService.GetProductById(item.ProductId);
+                    var product = await _productService.GetProductByIdAsync(item.ProductId);
                     if (product == null)
                     {
                         errors.Add($"Cannot process payment for order {order.CustomOrderNumber}. Cannot get the product by id '{item.ProductId}'.");
@@ -350,7 +354,7 @@ namespace Nop.Plugin.Payments.OpenPay.Services
                         productName = product.Name;
                     else
                     {
-                        var attributeInfo = _productAttributeFormatter.FormatAttributes(product, item.AttributesXml, customer, ", ");
+                        var attributeInfo = await _productAttributeFormatter.FormatAttributesAsync(product, item.AttributesXml, customer, ", ");
                         productName = $"{product.Name} ({attributeInfo})";
                     }
 
@@ -401,7 +405,7 @@ namespace Nop.Plugin.Payments.OpenPay.Services
             if (order is null)
                 throw new ArgumentNullException(nameof(order));
 
-            var validationResult = Validate();
+            var validationResult = await ValidateAsync();
             if (!validationResult.IsValid)
                 return (null, validationResult.Errors);
 
@@ -444,7 +448,7 @@ namespace Nop.Plugin.Payments.OpenPay.Services
             if (order is null)
                 throw new ArgumentNullException(nameof(order));
 
-            var validationResult = Validate();
+            var validationResult = await ValidateAsync();
             if (!validationResult.IsValid)
                 return (false, validationResult.Errors);
 

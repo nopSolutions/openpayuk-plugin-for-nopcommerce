@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -16,8 +17,8 @@ using Nop.Services.Logging;
 using Nop.Services.Messages;
 using Nop.Services.Payments;
 using Nop.Services.Plugins;
-using Nop.Services.Tasks;
 using Nop.Web.Framework.Infrastructure;
+using Scheduling = Nop.Services.Tasks;
 
 namespace Nop.Plugin.Payments.OpenPay
 {
@@ -38,7 +39,7 @@ namespace Nop.Plugin.Payments.OpenPay
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly INotificationService _notificationService;
         private readonly ISettingService _settingService;
-        private readonly IScheduleTaskService _scheduleTaskService;
+        private readonly Scheduling.IScheduleTaskService _scheduleTaskService;
         private readonly IWebHelper _webHelper;
         private readonly WidgetSettings _widgetSettings;
 
@@ -57,7 +58,7 @@ namespace Nop.Plugin.Payments.OpenPay
             IHttpContextAccessor httpContextAccessor,
             INotificationService notificationService,
             ISettingService settingService,
-            IScheduleTaskService scheduleTaskService,
+            Scheduling.IScheduleTaskService scheduleTaskService,
             IWebHelper webHelper,
             WidgetSettings widgetSettings)
         {
@@ -84,35 +85,36 @@ namespace Nop.Plugin.Payments.OpenPay
         /// Process a payment
         /// </summary>
         /// <param name="processPaymentRequest">Payment info required for an order processing</param>
-        /// <returns>Process payment result</returns>
-        public ProcessPaymentResult ProcessPayment(ProcessPaymentRequest processPaymentRequest)
+        /// <returns>The <see cref="Task"/> containing the <see cref="ProcessPaymentResult"/></returns>
+        public Task<ProcessPaymentResult> ProcessPaymentAsync(ProcessPaymentRequest processPaymentRequest)
         {
-            return new ProcessPaymentResult();
+            return Task.FromResult(new ProcessPaymentResult());
         }
 
         /// <summary>
         /// Post process payment (used by payment gateways that require redirecting to a third-party URL)
         /// </summary>
         /// <param name="postProcessPaymentRequest">Payment info required for an order processing</param>
-        public void PostProcessPayment(PostProcessPaymentRequest postProcessPaymentRequest)
+        /// <returns>The <see cref="Task"/></returns>
+        public async Task PostProcessPaymentAsync(PostProcessPaymentRequest postProcessPaymentRequest)
         {
             if (postProcessPaymentRequest is null)
                 throw new ArgumentNullException(nameof(postProcessPaymentRequest));
 
             var order = postProcessPaymentRequest.Order;
 
-            var result = _openPayService.PlaceOrderAsync(order).Result;
+            var result = await _openPayService.PlaceOrderAsync(order);
             if (!string.IsNullOrEmpty(result.HandoverUrl))
                 _httpContextAccessor.HttpContext.Response.Redirect(result.HandoverUrl);
             else
             {
-                _logger.Error($"{Defaults.SystemName}: {string.Join("\n", result.Errors)}");
+                await _logger.ErrorAsync($"{Defaults.SystemName}: {string.Join(Environment.NewLine, result.Errors)}");
 
                 var urlHelper = _urlHelperFactory.GetUrlHelper(_actionContextAccessor.ActionContext);
-                var failUrl = urlHelper.RouteUrl(Defaults.OrderDetailsRouteName, new { orderId = order.Id }, _webHelper.CurrentRequestProtocol);
+                var failUrl = urlHelper.RouteUrl(Defaults.OrderDetailsRouteName, new { orderId = order.Id }, _webHelper.GetCurrentRequestProtocol());
 
                 _notificationService.ErrorNotification(
-                    _localizationService.GetResource("Plugins.Payments.OpenPay.FailedOrderCreation"));
+                    await _localizationService.GetResourceAsync("Plugins.Payments.OpenPay.FailedOrderCreation"));
 
                 _httpContextAccessor.HttpContext.Response.Redirect(failUrl);
             }
@@ -122,20 +124,20 @@ namespace Nop.Plugin.Payments.OpenPay
         /// Returns a value indicating whether payment method should be hidden during checkout
         /// </summary>
         /// <param name="cart">Shopping cart</param>
-        /// <returns>true - hide; false - display.</returns>
-        public bool HidePaymentMethod(IList<ShoppingCartItem> cart)
+        /// <returns>The <see cref="Task"/> containing a value indicating whether payment method should be hidden during checkout</returns>
+        public async Task<bool> HidePaymentMethodAsync(IList<ShoppingCartItem> cart)
         {
-            return !_openPayService.CanDisplayPaymentMethod(cart);
+            return !await _openPayService.CanDisplayPaymentMethodAsync(cart);
         }
 
         /// <summary>
         /// Gets additional handling fee
         /// </summary>
         /// <param name="cart">Shopping cart</param>
-        /// <returns>Additional handling fee</returns>
-        public decimal GetAdditionalHandlingFee(IList<ShoppingCartItem> cart)
+        /// <returns>The <see cref="Task"/> containing a additional handling fee</returns>
+        public async Task<decimal> GetAdditionalHandlingFeeAsync(IList<ShoppingCartItem> cart)
         {
-            return _paymentService.CalculateAdditionalFee(cart,
+            return await _paymentService.CalculateAdditionalFeeAsync(cart,
                 _openPayPaymentSettings.AdditionalFee, _openPayPaymentSettings.AdditionalFeePercentage);
         }
 
@@ -143,18 +145,18 @@ namespace Nop.Plugin.Payments.OpenPay
         /// Captures payment
         /// </summary>
         /// <param name="capturePaymentRequest">Capture payment request</param>
-        /// <returns>Capture payment result</returns>
-        public CapturePaymentResult Capture(CapturePaymentRequest capturePaymentRequest)
+        /// <returns>The <see cref="Task"/> containing the <see cref="CapturePaymentResult"/></returns>
+        public Task<CapturePaymentResult> CaptureAsync(CapturePaymentRequest capturePaymentRequest)
         {
-            return new CapturePaymentResult { Errors = new[] { "Capture method not supported" } };
+            return Task.FromResult(new CapturePaymentResult { Errors = new[] { "Capture method not supported" } });
         }
 
         /// <summary>
         /// Refunds a payment
         /// </summary>
         /// <param name="refundPaymentRequest">Request</param>
-        /// <returns>Result</returns>
-        public RefundPaymentResult Refund(RefundPaymentRequest refundPaymentRequest)
+        /// <returns>The <see cref="Task"/> containing the <see cref="RefundPaymentResult"/></returns>
+        public async Task<RefundPaymentResult> RefundAsync(RefundPaymentRequest refundPaymentRequest)
         {
             if (refundPaymentRequest is null)
                 throw new ArgumentNullException(nameof(refundPaymentRequest));
@@ -163,7 +165,7 @@ namespace Nop.Plugin.Payments.OpenPay
                 ? (decimal?)refundPaymentRequest.AmountToRefund
                 : null;
             var order = refundPaymentRequest.Order;
-            var result = _openPayService.RefundOrderAsync(order, amountToRefund).Result;
+            var result = await _openPayService.RefundOrderAsync(order, amountToRefund);
             if (result.IsSuccess)
             {
                 return new RefundPaymentResult
@@ -181,43 +183,43 @@ namespace Nop.Plugin.Payments.OpenPay
         /// Voids a payment
         /// </summary>
         /// <param name="voidPaymentRequest">Request</param>
-        /// <returns>Result</returns>
-        public VoidPaymentResult Void(VoidPaymentRequest voidPaymentRequest)
+        /// <returns>The <see cref="Task"/> containing the <see cref="VoidPaymentResult"/></returns>
+        public Task<VoidPaymentResult> VoidAsync(VoidPaymentRequest voidPaymentRequest)
         {
-            return new VoidPaymentResult { Errors = new[] { "Void method not supported" } };
+            return Task.FromResult(new VoidPaymentResult { Errors = new[] { "Void method not supported" } });
         }
 
         /// <summary>
         /// Process recurring payment
         /// </summary>
         /// <param name="processPaymentRequest">Payment info required for an order processing</param>
-        /// <returns>Process payment result</returns>
-        public ProcessPaymentResult ProcessRecurringPayment(ProcessPaymentRequest processPaymentRequest)
+        /// <returns>The <see cref="Task"/> containing the <see cref="ProcessPaymentResult"/></returns>
+        public Task<ProcessPaymentResult> ProcessRecurringPaymentAsync(ProcessPaymentRequest processPaymentRequest)
         {
-            return new ProcessPaymentResult { Errors = new[] { "Recurring payment not supported" } };
+            return Task.FromResult(new ProcessPaymentResult { Errors = new[] { "Recurring payment not supported" } });
         }
 
         /// <summary>
         /// Cancels a recurring payment
         /// </summary>
         /// <param name="cancelPaymentRequest">Request</param>
-        /// <returns>Result</returns>
-        public CancelRecurringPaymentResult CancelRecurringPayment(CancelRecurringPaymentRequest cancelPaymentRequest)
+        /// <returns>The <see cref="Task"/> containing the <see cref="CancelRecurringPaymentResult"/></returns>
+        public Task<CancelRecurringPaymentResult> CancelRecurringPaymentAsync(CancelRecurringPaymentRequest cancelPaymentRequest)
         {
-            return new CancelRecurringPaymentResult { Errors = new[] { "Recurring payment not supported" } };
+            return Task.FromResult(new CancelRecurringPaymentResult { Errors = new[] { "Recurring payment not supported" } });
         }
 
         /// <summary>
         /// Gets a value indicating whether customers can complete a payment after order is placed but not completed (for redirection payment methods)
         /// </summary>
         /// <param name="order">Order</param>
-        /// <returns>Result</returns>
-        public bool CanRePostProcessPayment(Order order)
+        /// <returns>The <see cref="Task"/> containing a value indicating whether customers can complete a payment after order is placed but not completed (for redirection payment methods)</returns>
+        public async Task<bool> CanRePostProcessPaymentAsync(Order order)
         {
             if (order == null)
                 throw new ArgumentNullException(nameof(order));
 
-            if (!_openPayService.Validate().IsValid)
+            if (!(await _openPayService.ValidateAsync()).IsValid)
                 return false;
 
             //let's ensure that at least 5 seconds passed after order is placed
@@ -232,20 +234,20 @@ namespace Nop.Plugin.Payments.OpenPay
         /// Validate payment form
         /// </summary>
         /// <param name="form">The parsed form values</param>
-        /// <returns>List of validating errors</returns>
-        public IList<string> ValidatePaymentForm(IFormCollection form)
+        /// <returns>The <see cref="Task"/> containing the list of validating errors</returns>
+        public async Task<IList<string>> ValidatePaymentFormAsync(IFormCollection form)
         {
-            return _openPayService.Validate().Errors;
+            return (await _openPayService.ValidateAsync()).Errors;
         }
 
         /// <summary>
         /// Get payment information
         /// </summary>
         /// <param name="form">The parsed form values</param>
-        /// <returns>Payment info holder</returns>
-        public ProcessPaymentRequest GetPaymentInfo(IFormCollection form)
+        /// <returns>The <see cref="Task"/> containing the payment info holder</returns>
+        public Task<ProcessPaymentRequest> GetPaymentInfoAsync(IFormCollection form)
         {
-            return new ProcessPaymentRequest();
+            return Task.FromResult(new ProcessPaymentRequest());
         }
 
         /// <summary>
@@ -270,10 +272,11 @@ namespace Nop.Plugin.Payments.OpenPay
         /// <summary>
         /// Install the plugin
         /// </summary>
-        public override void Install()
+        /// <returns>The <see cref="Task"/></returns>
+        public async override Task InstallAsync()
         {
             //settings
-            _settingService.SaveSetting(new OpenPayPaymentSettings
+            await _settingService.SaveSettingAsync(new OpenPayPaymentSettings
             {
                 UseSandbox = true,
                 DisplayProductPageWidget = true,
@@ -294,18 +297,18 @@ namespace Nop.Plugin.Payments.OpenPay
             if (!_widgetSettings.ActiveWidgetSystemNames.Contains(Defaults.SystemName))
             {
                 _widgetSettings.ActiveWidgetSystemNames.Add(Defaults.SystemName);
-                _settingService.SaveSetting(_widgetSettings);
+                await _settingService.SaveSettingAsync(_widgetSettings);
             }
 
             //schedule tasks
             foreach (var task in Defaults.ScheduleTasks)
             {
-                if (_scheduleTaskService.GetTaskByType(task.Type) == null)
-                    _scheduleTaskService.InsertTask(task);
+                if (await _scheduleTaskService.GetTaskByTypeAsync(task.Type) == null)
+                    await _scheduleTaskService.InsertTaskAsync(task);
             }
 
             //locales
-            _localizationService.AddPluginLocaleResource(new Dictionary<string, string>
+            await _localizationService.AddLocaleResourceAsync(new Dictionary<string, string>
             {
                 ["Plugins.Payments.OpenPay.Fields.UseSandbox"] = "Use sandbox",
                 ["Plugins.Payments.OpenPay.Fields.UseSandbox.Hint"] = "Determine whether to use the sandbox environment for testing purposes.",
@@ -375,50 +378,51 @@ namespace Nop.Plugin.Payments.OpenPay
                     </p>",
             });
 
-            base.Install();
+            await base.InstallAsync();
         }
 
         /// <summary>
         /// Uninstall the plugin
         /// </summary>
-        public override void Uninstall()
+        /// <returns>The <see cref="Task"/></returns>
+        public async override Task UninstallAsync()
         {
             //settings
-            _settingService.DeleteSetting<OpenPayPaymentSettings>();
+            await _settingService.DeleteSettingAsync<OpenPayPaymentSettings>();
 
             if (_widgetSettings.ActiveWidgetSystemNames.Contains(Defaults.SystemName))
             {
                 _widgetSettings.ActiveWidgetSystemNames.Remove(Defaults.SystemName);
-                _settingService.SaveSetting(_widgetSettings);
+                await _settingService.SaveSettingAsync(_widgetSettings);
             }
 
             //schedule task
             foreach (var task in Defaults.ScheduleTasks)
             {
-                if (_scheduleTaskService.GetTaskByType(task.Type) != null)
-                    _scheduleTaskService.DeleteTask(task);
+                if (await _scheduleTaskService.GetTaskByTypeAsync(task.Type) != null)
+                    await _scheduleTaskService.DeleteTaskAsync(task);
             }
 
             //locales
-            _localizationService.DeletePluginLocaleResources("Plugins.Payments.OpenPay");
+            await _localizationService.DeleteLocaleResourcesAsync("Plugins.Payments.OpenPay");
 
-            base.Uninstall();
+            await base.UninstallAsync();
         }
 
         /// <summary>
         /// Gets widget zones where this widget should be rendered
         /// </summary>
-        /// <returns>Widget zones</returns>
-        public virtual IList<string> GetWidgetZones()
+        /// <returns>The <see cref="Task"/> containing the list of widget zones</returns>
+        public virtual Task<IList<string>> GetWidgetZonesAsync()
         {
-            return new List<string>
+            return Task.FromResult<IList<string>>(new List<string>
             {
                 PublicWidgetZones.ProductDetailsBottom,
                 PublicWidgetZones.ProductBoxAddinfoMiddle,
                 PublicWidgetZones.OrderSummaryContentAfter,
                 PublicWidgetZones.BodyStartHtmlTagAfter,
                 PublicWidgetZones.BodyEndHtmlTagBefore
-            };
+            });
         }
 
         /// <summary>
@@ -441,6 +445,15 @@ namespace Nop.Plugin.Payments.OpenPay
             }
 
             return string.Empty;
+        }
+
+        /// <summary>
+        /// Gets a payment method description that will be displayed on checkout pages in the public store
+        /// </summary>
+        /// <returns>The <see cref="Task"/> containing the payment method description that will be displayed on checkout pages in the public store</returns>
+        public Task<string> GetPaymentMethodDescriptionAsync()
+        {
+            return _localizationService.GetResourceAsync("Plugins.Payments.OpenPay.PaymentMethodDescription");
         }
 
         #endregion
@@ -481,11 +494,6 @@ namespace Nop.Plugin.Payments.OpenPay
         /// Gets a value indicating whether we should display a payment information page for this plugin
         /// </summary>
         public bool SkipPaymentInfo => false;
-
-        /// <summary>
-        /// Gets a payment method description that will be displayed on checkout pages in the public store
-        /// </summary>
-        public string PaymentMethodDescription => _localizationService.GetResource("Plugins.Payments.OpenPay.PaymentMethodDescription");
 
         /// <summary>
         /// Gets a value indicating whether to hide this plugin on the widget list page in the admin area

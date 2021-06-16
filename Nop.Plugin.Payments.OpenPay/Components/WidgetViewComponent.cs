@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
@@ -65,10 +66,10 @@ namespace Nop.Plugin.Payments.OpenPay.Components
         /// </summary>
         /// <param name="widgetZone">Widget zone name</param>
         /// <param name="additionalData">Additional data</param>
-        /// <returns>The view component result</returns>
-        public IViewComponentResult Invoke(string widgetZone, object additionalData)
+        /// <returns>The <see cref="Task"/> containing the <see cref="IViewComponentResult"/></returns>
+        public async Task<IViewComponentResult> InvokeAsync(string widgetZone, object additionalData)
         {
-            if (!_openPayService.CanDisplayWidget())
+            if (!await _openPayService.CanDisplayWidgetAsync())
                 return Content(string.Empty);
 
             if (widgetZone == PublicWidgetZones.BodyEndHtmlTagBefore)
@@ -82,15 +83,18 @@ namespace Nop.Plugin.Payments.OpenPay.Components
             var region = Defaults.OpenPay.AvailableRegions.FirstOrDefault(
                 region => region.IsSandbox == _openPayPaymentSettings.UseSandbox && region.TwoLetterIsoCode == _openPayPaymentSettings.RegionTwoLetterIsoCode);
 
+            var workingCurrency = await _workContext.GetWorkingCurrencyAsync();
+            Task<decimal> toWorkingCurrencyAsync(decimal price) => _currencyService.ConvertFromPrimaryStoreCurrencyAsync(price, workingCurrency);
+
             var model = new WidgetModel
             {
                 WidgetCode = region.WidgetCode,
                 RegionCode = region.TwoLetterIsoCode,
-                CurrencyCode = _workContext.WorkingCurrency.CurrencyCode,
-                CurrencyFormatting = _workContext.WorkingCurrency.CustomFormatting,
+                CurrencyCode = workingCurrency.CurrencyCode,
+                CurrencyFormatting = workingCurrency.CustomFormatting,
                 PlanTiers = _openPayPaymentSettings.PlanTiers.Split(',').Select(x => int.Parse(x)).ToArray(),
-                MinEligibleAmount = ToWorkingCurrency(_openPayPaymentSettings.MinOrderTotal),
-                MaxEligibleAmount = ToWorkingCurrency(_openPayPaymentSettings.MaxOrderTotal),
+                MinEligibleAmount = await toWorkingCurrencyAsync(_openPayPaymentSettings.MinOrderTotal),
+                MaxEligibleAmount = await toWorkingCurrencyAsync(_openPayPaymentSettings.MaxOrderTotal),
                 Type = "Online"
             };
 
@@ -99,7 +103,7 @@ namespace Nop.Plugin.Payments.OpenPay.Components
                 if (!_openPayPaymentSettings.DisplayProductPageWidget)
                     return Content(string.Empty);
 
-                var product = _productService.GetProductById(productDetailsModel.Id);
+                var product = await _productService.GetProductByIdAsync(productDetailsModel.Id);
                 if (product == null || product.Deleted || product.IsDownload || !product.IsShipEnabled)
                     return Content(string.Empty);
 
@@ -115,7 +119,7 @@ namespace Nop.Plugin.Payments.OpenPay.Components
                 if (!_openPayPaymentSettings.DisplayProductListingWidget)
                     return Content(string.Empty);
 
-                var product = _productService.GetProductById(productOverviewModel.Id);
+                var product = await _productService.GetProductByIdAsync(productOverviewModel.Id);
                 if (product == null || product.Deleted || product.IsDownload || !product.IsShipEnabled)
                     return Content(string.Empty);
 
@@ -135,24 +139,28 @@ namespace Nop.Plugin.Payments.OpenPay.Components
                 if (routeName != Defaults.ShoppingCartRouteName)
                     return Content(string.Empty);
 
-                var customer = _workContext.CurrentCustomer;
-                var store = _storeContext.CurrentStore;
-                var cart = _shoppingCartService.GetShoppingCart(customer, ShoppingCartType.ShoppingCart, store.Id);
+                var customer = await _workContext.GetCurrentCustomerAsync();
+                var store = await _storeContext.GetCurrentStoreAsync();
+                var cart = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart, store.Id);
                 if (cart == null || !cart.Any())
                     return Content(string.Empty);
 
-                if (!_shoppingCartService.ShoppingCartRequiresShipping(cart))
+                if (!await _shoppingCartService.ShoppingCartRequiresShippingAsync(cart))
                     return Content(string.Empty);
 
-                var cartTotal = _orderTotalCalculationService.GetShoppingCartTotal(cart);
-                if (!cartTotal.HasValue)
+                var shoppingCartTotal = decimal.Zero;
+
+                var cartTotal = await _orderTotalCalculationService.GetShoppingCartTotalAsync(cart);
+                if (cartTotal.shoppingCartTotal.HasValue)
+                    shoppingCartTotal = cartTotal.shoppingCartTotal.Value;
+                else
                 {
-                    _orderTotalCalculationService.GetShoppingCartSubTotal(cart, true, out _, out _, out _, out var subTotalWithDiscount);
-                    cartTotal = subTotalWithDiscount;
+                    var cartSubTotal = await _orderTotalCalculationService.GetShoppingCartSubTotalAsync(cart, true);
+                    shoppingCartTotal = cartSubTotal.subTotalWithDiscount;
                 }
 
                 model.Logo = _openPayPaymentSettings.CartWidgetLogo;
-                model.Amount = ToWorkingCurrency(cartTotal.Value);
+                model.Amount = await toWorkingCurrencyAsync(shoppingCartTotal);
 
                 return View("~/Plugins/Payments.OpenPay/Views/Widget/Cart.cshtml", model);
             }
@@ -176,15 +184,6 @@ namespace Nop.Plugin.Payments.OpenPay.Components
             }
 
             return Content(string.Empty);
-        }
-
-        #endregion
-
-        #region Utilities
-
-        private decimal ToWorkingCurrency(decimal price)
-        {
-            return _currencyService.ConvertFromPrimaryStoreCurrency(price, _workContext.WorkingCurrency);
         }
 
         #endregion

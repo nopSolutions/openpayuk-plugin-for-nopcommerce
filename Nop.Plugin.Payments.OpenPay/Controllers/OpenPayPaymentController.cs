@@ -57,50 +57,50 @@ namespace Nop.Plugin.Payments.OpenPay.Controllers
 
         public async Task<IActionResult> SuccessfulPayment(string status, string planId, int? orderId)
         {
-            if (!(_paymentPluginManager.LoadPluginBySystemName(Defaults.SystemName) is OpenPayPaymentProcessor processor) || !_paymentPluginManager.IsPluginActive(processor))
-                return ProduceErrorResponse();
+            if (await _paymentPluginManager.LoadPluginBySystemNameAsync(Defaults.SystemName) is not OpenPayPaymentProcessor processor || !_paymentPluginManager.IsPluginActive(processor))
+                return await ProduceErrorResponseAsync();
 
             if (!orderId.HasValue || string.IsNullOrEmpty(planId) || string.IsNullOrEmpty(status))
-                return ProduceErrorResponse();
+                return await ProduceErrorResponseAsync();
 
-            var order = _orderService.GetOrderById(orderId.Value);
+            var order = await _orderService.GetOrderByIdAsync(orderId.Value);
             if (order == null || order.Deleted)
-                return ProduceErrorResponse(null, $"Invalid processing payment after the order successfully placed on OpenPay. The order '{order.CustomOrderNumber}' not found or was deleted.");
+                return await ProduceErrorResponseAsync(null, $"Invalid processing payment after the order successfully placed on OpenPay. The order '{order.CustomOrderNumber}' not found or was deleted.");
 
             var openPayOrder = await _openPayApi.GetOrderStatusByIdAsync(planId);
             if (openPayOrder == null)
-                return ProduceErrorResponse(order.Id, $"Invalid processing payment after the order successfully placed on OpenPay. Cannot get the OpenPay order by id '{planId}'.");
+                return await ProduceErrorResponseAsync(order.Id, $"Invalid processing payment after the order successfully placed on OpenPay. Cannot get the OpenPay order by id '{planId}'.");
 
             if (!openPayOrder.PlanStatus.Equals(status, StringComparison.InvariantCultureIgnoreCase))
-                return ProduceErrorResponse(order.Id, $"Invalid processing payment after the order successfully placed on OpenPay. The OpenPay plan status '{status}' is invalid.");
+                return await ProduceErrorResponseAsync(order.Id, $"Invalid processing payment after the order successfully placed on OpenPay. The OpenPay plan status '{status}' is invalid.");
 
             if (!openPayOrder.OrderStatus.Equals("Pending", StringComparison.InvariantCultureIgnoreCase))
-                return ProduceErrorResponse(order.Id, $"Invalid processing payment after the order successfully placed on OpenPay. The OpenPay order status '{openPayOrder.OrderStatus}' is invalid.");
+                return await ProduceErrorResponseAsync(order.Id, $"Invalid processing payment after the order successfully placed on OpenPay. The OpenPay order status '{openPayOrder.OrderStatus}' is invalid.");
 
             if (!openPayOrder.PlanStatus.Equals("Lodged", StringComparison.InvariantCultureIgnoreCase))
-                return ProduceErrorResponse(order.Id, "Invalid processing payment after the order successfully placed on OpenPay. The OpenPay plan status should be 'Lodged'.");
+                return await ProduceErrorResponseAsync(order.Id, "Invalid processing payment after the order successfully placed on OpenPay. The OpenPay plan status should be 'Lodged'.");
 
             if (!_orderProcessingService.CanMarkOrderAsPaid(order))
-                return ProduceErrorResponse(order.Id, $"Invalid processing payment after the order successfully placed on OpenPay. The order '{order.CustomOrderNumber}' already marked as paid.");
+                return await ProduceErrorResponseAsync(order.Id, $"Invalid processing payment after the order successfully placed on OpenPay. The order '{order.CustomOrderNumber}' already marked as paid.");
 
-            var result = _openPayService.CaptureOrderAsync(order).Result;
+            var result = await _openPayService.CaptureOrderAsync(order);
             if (string.IsNullOrEmpty(result.OrderId))
-                return ProduceErrorResponse(order.Id, string.Join("\n", result.Errors));
+                return await ProduceErrorResponseAsync(order.Id, string.Join(Environment.NewLine, result.Errors));
 
             order.CaptureTransactionId = result.OrderId;
 
             if (_orderProcessingService.CanMarkOrderAsPaid(order))
-                _orderProcessingService.MarkOrderAsPaid(order);
+                await _orderProcessingService.MarkOrderAsPaidAsync(order);
 
             _notificationService.SuccessNotification(
-                _localizationService.GetResource("Plugins.Payments.OpenPay.SuccessfulPayment"));
+                await _localizationService.GetResourceAsync("Plugins.Payments.OpenPay.SuccessfulPayment"));
 
             return RedirectToAction("Completed", "Checkout", new { orderId = order.Id });
         }
 
-        public IActionResult LandingPage()
+        public async Task<IActionResult> LandingPage()
         {
-            if (!(_paymentPluginManager.LoadPluginBySystemName(Defaults.SystemName) is OpenPayPaymentProcessor processor) || !_paymentPluginManager.IsPluginActive(processor))
+            if (await _paymentPluginManager.LoadPluginBySystemNameAsync(Defaults.SystemName) is not OpenPayPaymentProcessor processor || !_paymentPluginManager.IsPluginActive(processor))
                 return RedirectToAction("Index", "Home");
 
             if (!_openPayPaymentSettings.DisplayLandingPageWidget)
@@ -113,13 +113,13 @@ namespace Nop.Plugin.Payments.OpenPay.Controllers
 
         #region Utilities
 
-        private IActionResult ProduceErrorResponse(int? orderId = null, string errorMessage = null)
+        private async Task<IActionResult> ProduceErrorResponseAsync(int? orderId = null, string errorMessage = null)
         {
             if (!string.IsNullOrEmpty(errorMessage) && _openPayPaymentSettings.LogCallbackErrors)
-                _logger.Error($"{Defaults.SystemName}: {errorMessage}");
+                await _logger.ErrorAsync($"{Defaults.SystemName}: {errorMessage}");
 
             _notificationService.ErrorNotification(
-                _localizationService.GetResource("Plugins.Payments.OpenPay.InvalidPayment"));
+                await _localizationService.GetResourceAsync("Plugins.Payments.OpenPay.InvalidPayment"));
 
             return orderId.HasValue
                 ? RedirectToAction("Details", "Order", new { orderId })

@@ -4,7 +4,7 @@ using Nop.Plugin.Payments.OpenPay.Models;
 using Nop.Services.Configuration;
 using Nop.Services.Logging;
 using Nop.Services.Stores;
-using Scheduling = Nop.Services.Tasks;
+using Scheduling = Nop.Services.ScheduleTasks;
 
 namespace Nop.Plugin.Payments.OpenPay.Services
 {

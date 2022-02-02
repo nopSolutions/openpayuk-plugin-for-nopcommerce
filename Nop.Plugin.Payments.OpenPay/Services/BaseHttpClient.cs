@@ -75,7 +75,7 @@ namespace Nop.Plugin.Payments.OpenPay.Services
 
         protected virtual async Task<TResponse> CallAsync<TResponse>(Func<Task<HttpResponseMessage>> requestFunc, [CallerMemberName] string callerName = "")
         {
-            HttpResponseMessage response = null;
+            HttpResponseMessage response;
             try
             {
                 response = await requestFunc();

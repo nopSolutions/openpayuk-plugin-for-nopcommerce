@@ -1,5 +1,5 @@
 ﻿using Nop.Core;
-using Nop.Core.Domain.Tasks;
+using Nop.Core.Domain.ScheduleTasks;
 using Nop.Plugin.Payments.OpenPay.Models;
 
 namespace Nop.Plugin.Payments.OpenPay

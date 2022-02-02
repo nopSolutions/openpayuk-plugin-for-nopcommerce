@@ -125,7 +125,7 @@ namespace Nop.Plugin.Payments.OpenPay.Components
 
                 model.Logo = _openPayPaymentSettings.ProductListingWidgetLogo;
                 model.HideLogo = _openPayPaymentSettings.ProductListingHideLogo;
-                model.Amount = productOverviewModel.ProductPrice.PriceValue;
+                model.Amount = productOverviewModel.ProductPrice.PriceValue ?? decimal.Zero;
 
                 return View("~/Plugins/Payments.OpenPay/Views/Widget/ProductListing.cshtml", model);
             }

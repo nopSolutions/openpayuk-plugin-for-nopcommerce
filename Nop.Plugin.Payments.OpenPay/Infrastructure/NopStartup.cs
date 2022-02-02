@@ -20,6 +20,7 @@ namespace Nop.Plugin.Payments.OpenPay.Infrastructure
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
         {
             services.AddHttpClient<OpenPayApi>().WithProxy();
+            services.AddScoped<OpenPayService>();
         }
 
         /// <summary>
@@ -33,6 +34,6 @@ namespace Nop.Plugin.Payments.OpenPay.Infrastructure
         /// <summary>
         /// Gets order of this startup configuration implementation
         /// </summary>
-        public int Order => 101;
+        public int Order => 3000;
     }
 }

@@ -15,10 +15,11 @@ using Nop.Services.Configuration;
 using Nop.Services.Localization;
 using Nop.Services.Logging;
 using Nop.Services.Messages;
+using Nop.Services.Orders;
 using Nop.Services.Payments;
 using Nop.Services.Plugins;
 using Nop.Web.Framework.Infrastructure;
-using Scheduling = Nop.Services.Tasks;
+using Scheduling = Nop.Services.ScheduleTasks;
 
 namespace Nop.Plugin.Payments.OpenPay
 {
@@ -34,7 +35,7 @@ namespace Nop.Plugin.Payments.OpenPay
         private readonly IActionContextAccessor _actionContextAccessor;
         private readonly ILocalizationService _localizationService;
         private readonly ILogger _logger;
-        private readonly IPaymentService _paymentService;
+        private readonly IOrderTotalCalculationService _orderTotalCalculationService;
         private readonly IUrlHelperFactory _urlHelperFactory;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly INotificationService _notificationService;
@@ -53,7 +54,7 @@ namespace Nop.Plugin.Payments.OpenPay
             IActionContextAccessor actionContextAccessor,
             ILocalizationService localizationService,
             ILogger logger,
-            IPaymentService paymentService,
+            IOrderTotalCalculationService orderTotalCalculationService,
             IUrlHelperFactory urlHelperFactory,
             IHttpContextAccessor httpContextAccessor,
             INotificationService notificationService,
@@ -66,7 +67,8 @@ namespace Nop.Plugin.Payments.OpenPay
             _openPayPaymentSettings = openPayPaymentSettings;
             _actionContextAccessor = actionContextAccessor;
             _localizationService = localizationService;
-            _paymentService = paymentService;
+            _logger = logger;
+            _orderTotalCalculationService = orderTotalCalculationService;
             _urlHelperFactory = urlHelperFactory;
             _httpContextAccessor = httpContextAccessor;
             _notificationService = notificationService;
@@ -74,7 +76,6 @@ namespace Nop.Plugin.Payments.OpenPay
             _scheduleTaskService = scheduleTaskService;
             _webHelper = webHelper;
             _widgetSettings = widgetSettings;
-            _logger = logger;
         }
 
         #endregion
@@ -137,7 +138,7 @@ namespace Nop.Plugin.Payments.OpenPay
         /// <returns>The <see cref="Task"/> containing a additional handling fee</returns>
         public async Task<decimal> GetAdditionalHandlingFeeAsync(IList<ShoppingCartItem> cart)
         {
-            return await _paymentService.CalculateAdditionalFeeAsync(cart,
+            return await _orderTotalCalculationService.CalculatePaymentAdditionalFeeAsync(cart,
                 _openPayPaymentSettings.AdditionalFee, _openPayPaymentSettings.AdditionalFeePercentage);
         }
 
@@ -273,7 +274,7 @@ namespace Nop.Plugin.Payments.OpenPay
         /// Install the plugin
         /// </summary>
         /// <returns>The <see cref="Task"/></returns>
-        public async override Task InstallAsync()
+        public override async Task InstallAsync()
         {
             //settings
             await _settingService.SaveSettingAsync(new OpenPayPaymentSettings
@@ -308,7 +309,7 @@ namespace Nop.Plugin.Payments.OpenPay
             }
 
             //locales
-            await _localizationService.AddLocaleResourceAsync(new Dictionary<string, string>
+            await _localizationService.AddOrUpdateLocaleResourceAsync(new Dictionary<string, string>
             {
                 ["Plugins.Payments.OpenPay.Fields.UseSandbox"] = "Use sandbox",
                 ["Plugins.Payments.OpenPay.Fields.UseSandbox.Hint"] = "Determine whether to use the sandbox environment for testing purposes.",
@@ -385,7 +386,7 @@ namespace Nop.Plugin.Payments.OpenPay
         /// Uninstall the plugin
         /// </summary>
         /// <returns>The <see cref="Task"/></returns>
-        public async override Task UninstallAsync()
+        public override async Task UninstallAsync()
         {
             //settings
             await _settingService.DeleteSettingAsync<OpenPayPaymentSettings>();

@@ -163,9 +163,9 @@ namespace Nop.Plugin.Payments.OpenPay.Services
             if (_openPayPaymentSettings.MinOrderTotal == 0 || _openPayPaymentSettings.MaxOrderTotal == 0)
                 return false;
 
-            var shoppingCartTotal = decimal.Zero;
-
             var cartTotal = await _orderTotalCalculationService.GetShoppingCartTotalAsync(cart);
+
+            decimal shoppingCartTotal;
             if (cartTotal.shoppingCartTotal.HasValue)
                 shoppingCartTotal = cartTotal.shoppingCartTotal.Value;
             else
